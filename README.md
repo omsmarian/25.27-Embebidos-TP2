@@ -19,7 +19,7 @@ Cada grupo debe implementar una estación que tenga las siguientes funciones:
 Cada estación de trabajo debe estar implementada como muestra la siguiente figura, y todas las estaciones deben estar interconectadas mediante CAN.
 
 <p align="center">
-	<img src="image/README/diagram.png" alt="board" width="600"/>
+	<img src="images/README/diagram.png" alt="board" width="600"/>
 </p>
 
 **1.3. Sensado de rolido, cabeceo y orientación**
@@ -29,7 +29,7 @@ La placa FRDM K64F posee un sensor acelerómetro y magnetómetro, el FXOS8700CQ,
 Tras ser configurado, el acelerómetro brinda información de la aceleración producida en cada uno de los 3 ejes, que debe ser procesada para obtener el **rolido** y **cabeceo** de la placa, cada uno con un rango desde -179° hasta 180° y precisión 1°.
 
 <p align="center">
-	<img src="image/README/board.png" alt="board" width="600"/>
+	<img src="images/README/board.png" alt="board" width="600"/>
 </p>
 
 A su vez, es posible leer la **orientación** de la placa mediante el magnetómetro. Procesando dicha información, se puede obtener el valor de la orientación con un rango desde -179° hasta 180° y precisión 1° (0° para el Norte, 90° para el Este, 180° para el sur y -90° para el oeste).
