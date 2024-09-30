@@ -80,6 +80,10 @@ static inline int DbgConsole_Disabled(void)
 #define SCANF   scanf
 #define PUTCHAR putchar
 #define GETCHAR getchar
+
+#define PRINT_FLAG 1
+#define MY_PRINTF(format, ...) if(PRINT_FLAG) {PRINTF(format, ##__VA_ARGS__);} else {}
+
 #endif /* SDK_DEBUGCONSOLE */
 
 /*******************************************************************************

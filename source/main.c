@@ -17,10 +17,6 @@
 #include "clock_config.h"
 #include "fsl_debug_console.h"
 
-#include "fsl.h"
-#include "display.h"
-#include "magcard.h"
-#include "LEDs.h"
 
 
 
@@ -41,7 +37,6 @@ int main(void) {
     hw_DisableInterrupts();
 
 	MY_PRINTF("Starting the program\n");
-	init_fsl();
 
 
 
@@ -54,19 +49,7 @@ int main(void) {
 
 	while(1)
 	{
-
-
-//	    int key = read_key();
-//	    if(key != 0)
-//	    	MY_PRINTF("%d\n", key);
-		update_fsl();
-
-//		bool flag = MagCardGetStatus();
-//		if (flag) {
-//			uint64_t data = MagCardGetCardNumber();
-//			MagCardClearData();
-//			MY_PRINTF("Data: %llu\n", data);
-//		}
+		PRINTF("TEST\n");
 	}
 
 
