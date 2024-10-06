@@ -17,7 +17,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__/PISR_FREQUENCY_HZ) - 1U)
+#define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__ / PISR_FREQUENCY_HZ) - 1U)
 
 
 /*******************************************************************************

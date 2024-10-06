@@ -20,14 +20,15 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define FUN_CANT	32 // Only 1 per PIN
+#define PORTS_CANT		5	// A, B, C, D, E
+#define FUN_CANT		32	// Only 1 per PIN
 
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-pinIrqFun_t irqFuns[FUN_CANT] = { NULL };
+pinIrqFun_t irqFuns[PORTS_CANT][FUN_CANT] = { NULL };
 
 
 /*******************************************************************************
@@ -68,8 +69,6 @@ void gpioMode (pin_t pin, uint8_t mode)
 	uint32_t * pin_PDDR = &(GPIO_Ports[pin_data.port]->PDDR);
 
 	SIM->SCGC5 |= SCSCGC5Ports_t[pin_data.port];
-	PORT_Ports[PIN2PORT(pin)]->PCR[pin_data.num] |= PORT_PCR_MUX(PORT_mGPIO);
-
 	*pin_PCR |= PORT_PCR_MUX(PORT_mGPIO);
 
 	if (mode == OUTPUT)
@@ -100,7 +99,7 @@ bool gpioIRQ (pin_t pin, uint8_t irqMode, pinIrqFun_t irqFun)
 	PORT_Ports[PIN2PORT(pin)]->PCR[PIN2NUM(pin)] |= PORT_PCR_IRQC(GPIO_IRQn[irqMode]);
 	if (PIN2NUM(pin) < FUN_CANT && irqFun != NULL)
 	{
-		irqFuns[PIN2NUM(pin)] = irqFun;
+		irqFuns[PIN2PORT(pin)][PIN2NUM(pin)] = irqFun;
 		status = false;
 	}
 
@@ -132,12 +131,12 @@ bool gpioRead (pin_t pin)
 __ISR__ PORTA_IRQHandler (void)
 {
 //	DEBUG_TP_SET_D;
-	for (uint8_t i = 0; i < 32; i++)
+	for (uint8_t i = 0; i < 32; i++) // Very slow, there are better ways such as CLZ
 		if (BITGET(PORTA->ISFR, i))
 		{
 			PORTA->PCR[i] |= PORT_PCR_ISF(HIGH);
-			if(irqFuns[i] != NULL)
-				irqFuns[i]();
+			if(irqFuns[PA][i] != NULL)
+				irqFuns[PA][i]();
 		}
 //	DEBUG_TP_CLR_D;
 }
@@ -149,8 +148,8 @@ __ISR__ PORTB_IRQHandler (void)
 		if (BITGET(PORTB->ISFR, i))
 		{
 			PORTB->PCR[i] |= PORT_PCR_ISF(HIGH);
-			if(irqFuns[i] != NULL)
-				irqFuns[i]();
+			if(irqFuns[PB][i] != NULL)
+				irqFuns[PB][i]();
 		}
 //	DEBUG_TP_CLR_D;
 }
@@ -162,8 +161,8 @@ __ISR__ PORTC_IRQHandler (void)
 		if (BITGET(PORTC->ISFR, i))
 		{
 			PORTC->PCR[i] |= PORT_PCR_ISF(HIGH);
-			if(irqFuns[i] != NULL)
-				irqFuns[i]();
+			if(irqFuns[PC][i] != NULL)
+				irqFuns[PC][i]();
 		}
 //	DEBUG_TP_CLR_D;
 }
@@ -175,8 +174,8 @@ __ISR__ PORTD_IRQHandler (void)
 		if (BITGET(PORTD->ISFR, i))
 		{
 			PORTD->PCR[i] |= PORT_PCR_ISF(HIGH);
-			if(irqFuns[i] != NULL)
-				irqFuns[i]();
+			if(irqFuns[PD][i] != NULL)
+				irqFuns[PD][i]();
 		}
 //	DEBUG_TP_CLR_D;
 }
@@ -188,8 +187,8 @@ __ISR__ PORTE_IRQHandler (void)
 		if (BITGET(PORTE->ISFR, i))
 		{
 			PORTE->PCR[i] |= PORT_PCR_ISF(HIGH);
-			if(irqFuns[i] != NULL)
-				irqFuns[i]();
+			if(irqFuns[PE][i] != NULL)
+				irqFuns[PE][i]();
 		}
 //	DEBUG_TP_CLR_D;
 }
@@ -204,9 +203,7 @@ __ISR__ PORTE_IRQHandler (void)
 uint8_t PinBit2Num(uint32_t pin)
 {
 	uint8_t i = 0;
-	while (pin >>= 1)
-		i++;
-
+	while (pin >> i++);
 	return i;
 }
 

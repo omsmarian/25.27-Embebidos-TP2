@@ -1,79 +1,38 @@
-/*
- * Copyright 2016-2024 NXP
- * All rights reserved.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
+/* Simple UART test program */
 
-/**
- * @file    tp1_interrupciones.c
- * @brief   Application entry point.
- */
+#include "hardware.h"
+#include "uart.h"
+#include "gpio.h"
+#include "board.h"
+#include "timer.h"
 
+#define __FOREVER__ 	for(;;)
 
-#include <stdio.h>
-#include "peripherals.h"
-#include "pin_mux.h"
-#include "clock_config.h"
-#include "fsl_debug_console.h"
+int main (void)
+{
+ 	hw_Init ();
 
+	uart_cfg_t config = {9600, UART_MODE_8, UART_PARITY_NONE, UART_STOPS_1, UART_RX_TX_ENABLED, UART_FIFO_RX_TX_ENABLED};
+	uartInit(UART0_ID, config);
 
+	char msg[] = "hello, world";
+	uartWriteMsg(UART0_ID, msg, 12);
 
+	timerInit();
+	ticks_t timeout = timerStart(TIMER_MS2TICKS(10));
 
+	// Enable interrupts
+	hw_EnableInterrupts();
 
-/* TODO: insert other include files here. */
-
-/* TODO: insert other definitions and declarations here. */
-
-/*
- * @brief   Application entry point.
- */
-
-int main(void) {
-
-    /* Init board hardware. */
-	BOARD_InitDebugConsole();
-	hw_Init();
-    hw_DisableInterrupts();
-
-	MY_PRINTF("Starting the program\n");
-
-
-
-    hw_EnableInterrupts();
-
-
-
-
-
-
-	while(1)
+	__FOREVER__
 	{
-		PRINTF("TEST\n");
+		// if(timerExpired(timeout))
+			if(uartIsRxMsg(UART0_ID))
+			{
+				uint8_t length = uartGetRxMsgLength(UART0_ID);
+				uint8_t a = uartReadMsg(UART0_ID, msg, length);
+				uartWriteMsg(UART0_ID, msg, length);
+				// timeout = timerStart(TIMER_MS2TICKS(10));
+			}
 	}
-
-
-
-
-
-    return 0 ;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

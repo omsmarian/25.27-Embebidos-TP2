@@ -1,6 +1,6 @@
 ### 25.27 - Sistemas Embebidos
 
-## TRABAJO PRÁCTICO N° 2 - Comunicación Serie
+## Trabajo Práctico N° 2 - Comunicación Serie
 
 **Se desea implementar una estación que obtenga la orientación de las placas FRDM K64F de todos los grupos y las muestre en una PC, utilizando los protocolos de comunicación UART, I2C, SPI y CAN.**
 

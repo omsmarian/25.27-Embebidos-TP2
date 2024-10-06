@@ -40,8 +40,10 @@
 #define HIGH    			1
 #endif // LOW
 
-// Manual Write
-#define SETB_ADDRS			(0x400FF084u)
+// Manual Write (to measure ISR time)
+
+// Periodic ISR
+#define SETB_ADDRS			(0x400FF084u) // PTB9
 #define SETB_PTR			((uint32_t *)SETB_ADDRS)
 #define SETB_VAL			(1<<9)
 
@@ -51,7 +53,8 @@
 #define DEBUG_TP_SET		*(SETB_PTR) = SETB_VAL
 #define DEBUG_TP_CLR		*(CLRB_PTR) = CLRB_VAL
 
-#define SETD_ADDRS			(0x400FF084u)
+// Dedicated ISR
+#define SETD_ADDRS			(0x400FF084u) // PTB5
 #define SETD_PTR			((uint32_t *)SETD_ADDRS)
 #define SETD_VAL			(1<<5)
 
