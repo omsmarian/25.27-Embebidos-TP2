@@ -23,6 +23,7 @@
 
 
 
+
 /*******************************************************************************
  * VARIABLES WITH GLOBAL SCOPE
  ******************************************************************************/
@@ -54,7 +55,7 @@ static PORT_Type* const Port_arr[] = PORT_BASE_PTRS;
  *******************************************************************************
  ******************************************************************************/
 
-void I2C_Init()
+void I2C_Init(pin_t pin)
 {
   // Clock gating
   SIM->SCG1 |= SIM_SCGC1_I2C2(HIGH);
@@ -64,6 +65,9 @@ void I2C_Init()
   // Port configuration
   SIM->SCG5 |= SIM_SCG5_PORTA(HIGH) | SIM_SCG5_PORTB(HIGH) | 
               SIM_SCG5_PORTC(HIGH) | SIM_SCG5_PORTD(HIGH) | SIM_SCG5_PORTE(HIGH);
+
+  // El acelerometro esta en el puerto E y usa I2C0 => uso todo para esto
+  // el mux tiene q estar configurado en 5
 }
 
 /*******************************************************************************
