@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     timer.h
   @brief    Timer driver. Simple implementation, support multiple timers.
-  @author   Group 4
+  @author   Group 4, based on the work of Nicolás Magliola
  ******************************************************************************/
 
 #ifndef _TIMER_H_

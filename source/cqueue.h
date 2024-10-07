@@ -1,12 +1,11 @@
 /***************************************************************************//**
   @file     cqueue.h
   @brief    Circular Queue / Ring Buffer / FIFO Implementation
-  @author   Group 4
+  @author   Group 4, based on the work of Daniel Jacoby
  ******************************************************************************/
 
-#ifndef CQUEUE_H
-#define CQUEUE_H
-
+#ifndef _CQUEUE_H_
+#define _CQUEUE_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
@@ -116,4 +115,4 @@ void queueClear (queue_id_t id);
 /*******************************************************************************
  ******************************************************************************/
 
-#endif
+#endif // _CQUEUE_H_

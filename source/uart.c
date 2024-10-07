@@ -1,14 +1,12 @@
 /***************************************************************************//**
   @file     magcard.c
   @brief    UART Driver for K64F. Blocking, Non-Blocking and using FIFO feature
-  @author   Group 4
+  @author   Group 4, based on the work of Daniel Jacoby
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
-
-#include <stdbool.h>
 
 #include "hardware.h"
 #include "MK64F12.h"

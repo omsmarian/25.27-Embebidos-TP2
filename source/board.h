@@ -1,7 +1,7 @@
 /***************************************************************************//**
   @file     board.h
   @brief    Board management
-  @author   Grupo 4
+  @author   Grupo 4, based on the work of Nicolás Magliola
  ******************************************************************************/
 
 #ifndef _BOARD_H_

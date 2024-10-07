@@ -1,95 +1,86 @@
 /***************************************************************************//**
-  @file     timer.c
-  @brief    Timer driver. Simple implementation, support multiple timers
-  @author   Group 4, based on the work of Nicolás Magliola
+  @file     fsm.c
+  @brief    Finite State Machine Implementation
+  @author   Group 4, based on the work of Daniel Jacoby
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "timer.h"
-#include "pisr.h"
+#include "fsm.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define TIMER_FREQUENCY_HZ		(1000 / TIMER_TICK_MS)
+#define TABLE_END		EVENTS_CANT
+
+// Number of edges per state (transitions) /////////////////////////////////////
+#define STATE_0_EDGES	3														// Extra space for default transition
+#define STATE_1_EDGES	2
+// Add more state edges here
 
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-/**
- * @brief Periodic service
+/*
+ * @brief Do nothing
  */
-static void timer_isr(void);
+static void pass (void);
+
+/*
+ * @brief Reset the FSM
+ */
+static void fsmReset (void);
 
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static volatile ticks_t timer_main_counter;
+// State-transition tables /////////////////////////////////////////////////////
+
+extern fsm_state_t state0[];
+extern fsm_state_t state1[];
+// static fsm_state_t state0[];
+// static fsm_state_t state1[];
+
+state0 = { {EVENT_0,	state1, pass},
+		   {EVENT_1,	state1, pass},
+		   {EVENT_2,	state1, pass},
+		   {TABLE_END,	state0, fsmReset} };
+
+state1 = { {EVENT_0,	state1, pass},
+		   {EVENT_1,	state1, pass},
+		   {EVENT_2,	state1, pass},
+		   {TABLE_END,	state0, fsmReset} };
+
+// Add more states here
 
 
 /*******************************************************************************
  *******************************************************************************
-                        GLOBAL FUNCTION DEFINITIONS
+						GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-void timerInit(void)
+fsm_state_t * fsm (fsm_state_t * state, fsm_event_t event)
 {
-    static bool yaInit = false;
-    if (yaInit)
-        return;
-    
-    pisrRegister(timer_isr, PISR_FREQUENCY_HZ / TIMER_FREQUENCY_HZ); // init peripheral
-    
-    yaInit = true;
+   	while ((state->event != event) && (state->event != TABLE_END))
+		++state;
+	
+	(* state->callback)();
+
+	return state->next_state;
 }
 
-ticks_t timerStart(ticks_t ticks)
+fsm_state_t * fsmInit (void)
 {
-    ticks_t now_copy;
-    
-    if (ticks < 0)
-        ticks = 0; // truncate min wait time
-    
-    //disable_interrupts();
-    now_copy = timer_main_counter; // esta copia debe ser atomic!!
-    //enable_interrupts();
-
-    now_copy += ticks;
-
-    return now_copy;
-}
-
-bool timerExpired(ticks_t timeout)
-{
-    ticks_t now_copy;
-
-    //disable_interrupts();
-    now_copy = timer_main_counter; // esta copia debe ser atomic!!
-    //enable_interrupts();
-
-    now_copy -= timeout;
-    return (now_copy >= 0);
-}
-
-void timerDelay(ticks_t ticks)
-{
-    ticks_t tim;
-    
-    tim = timerStart(ticks);
-    while (!timerExpired(tim))
-    {
-        // wait...
-    }
+ 	return state0;
 }
 
 
@@ -99,10 +90,10 @@ void timerDelay(ticks_t ticks)
  *******************************************************************************
  ******************************************************************************/
 
-static void timer_isr(void)
-{
-    ++timer_main_counter; // update main counter
-}
+// Callback functions //////////////////////////////////////////////////////////
+
+static void pass (void) {}
+static void fsmReset (void) {}
 
 
 /******************************************************************************/

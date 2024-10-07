@@ -1,16 +1,17 @@
-/* Simple UART test program */
+/* Simple UART test program, based on the work of Daniel Jacoby */
 
-#include "hardware.h"
-#include "uart.h"
-#include "gpio.h"
 #include "board.h"
+#include "gpio.h"
+#include "hardware.h"
 #include "timer.h"
+#include "uart.h"
 
 #define __FOREVER__ 	for(;;)
 
 int main (void)
 {
- 	hw_Init ();
+ 	hw_Init();
+	hw_DisableInterrupts();
 
 	uart_cfg_t config = {9600, UART_MODE_8, UART_PARITY_NONE, UART_STOPS_1, UART_RX_TX_ENABLED, UART_FIFO_RX_TX_ENABLED};
 	uartInit(UART0_ID, config);
@@ -21,7 +22,6 @@ int main (void)
 	timerInit();
 	ticks_t timeout = timerStart(TIMER_MS2TICKS(10));
 
-	// Enable interrupts
 	hw_EnableInterrupts();
 
 	__FOREVER__
@@ -30,7 +30,7 @@ int main (void)
 			if(uartIsRxMsg(UART0_ID))
 			{
 				uint8_t length = uartGetRxMsgLength(UART0_ID);
-				uint8_t a = uartReadMsg(UART0_ID, msg, length);
+				uint8_t tmp = uartReadMsg(UART0_ID, msg, length);
 				uartWriteMsg(UART0_ID, msg, length);
 				// timeout = timerStart(TIMER_MS2TICKS(10));
 			}

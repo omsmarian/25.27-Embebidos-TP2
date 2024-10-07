@@ -1,6 +1,6 @@
 /***************************************************************************//**
-  @file     timer.c
-  @brief    Timer driver. Simple implementation, support multiple timers
+  @file     App.c
+  @brief    Application functions
   @author   Group 4, based on the work of Nicolás Magliola
  ******************************************************************************/
 
@@ -8,32 +8,37 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include "board.h"
+#include "fsm.h"
+#include "gpio.h"
+#include "hardware.h"
 #include "timer.h"
-#include "pisr.h"
-
-
-/*******************************************************************************
- * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
- ******************************************************************************/
-
-#define TIMER_FREQUENCY_HZ		(1000 / TIMER_TICK_MS)
-
+#include "uart.h"
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-/**
- * @brief Periodic service
+/*
+ * @brief Check for events
+ * @return True if there was an event
  */
-static void timer_isr(void);
+bool getStatus (void);
+
+/*
+ * @brief Get the event that occurred
+ * @return Event to be processed by the FSM
+ * @note This function should be called only if getStatus() returns true
+ */
+fsm_event_t getEvent (void);
 
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static volatile ticks_t timer_main_counter;
+static fsm_state_t * state = NULL;
+// static fsm_event_t event = EVENTS_CANT;
 
 
 /*******************************************************************************
@@ -42,54 +47,26 @@ static volatile ticks_t timer_main_counter;
  *******************************************************************************
  ******************************************************************************/
 
-void timerInit(void)
+/* Función que se llama 1 vez, al comienzo del programa */
+void App_Init (void)
 {
-    static bool yaInit = false;
-    if (yaInit)
-        return;
-    
-    pisrRegister(timer_isr, PISR_FREQUENCY_HZ / TIMER_FREQUENCY_HZ); // init peripheral
-    
-    yaInit = true;
+	uart_cfg_t config = {9600, UART_MODE_8,
+						 UART_PARITY_NONE,
+						 UART_STOPS_1,
+						 UART_RX_TX_ENABLED,
+						 UART_FIFO_RX_TX_ENABLED};
+	uartInit(UART0_ID, config);
+
+	timerInit();
+
+	state = fsmInit();
 }
 
-ticks_t timerStart(ticks_t ticks)
+/* Función que se llama constantemente en un ciclo infinito */
+void App_Run (void)
 {
-    ticks_t now_copy;
-    
-    if (ticks < 0)
-        ticks = 0; // truncate min wait time
-    
-    //disable_interrupts();
-    now_copy = timer_main_counter; // esta copia debe ser atomic!!
-    //enable_interrupts();
-
-    now_copy += ticks;
-
-    return now_copy;
-}
-
-bool timerExpired(ticks_t timeout)
-{
-    ticks_t now_copy;
-
-    //disable_interrupts();
-    now_copy = timer_main_counter; // esta copia debe ser atomic!!
-    //enable_interrupts();
-
-    now_copy -= timeout;
-    return (now_copy >= 0);
-}
-
-void timerDelay(ticks_t ticks)
-{
-    ticks_t tim;
-    
-    tim = timerStart(ticks);
-    while (!timerExpired(tim))
-    {
-        // wait...
-    }
+	if(getStatus())
+		state = fsm(state, getEvent());
 }
 
 
@@ -99,9 +76,14 @@ void timerDelay(ticks_t ticks)
  *******************************************************************************
  ******************************************************************************/
 
-static void timer_isr(void)
+bool getStatus(void)
 {
-    ++timer_main_counter; // update main counter
+	// Check for events
+}
+
+fsm_event_t getEvent(void)
+{
+	// Get event
 }
 
 
