@@ -21,18 +21,22 @@
 #define LOW 0
 
 
+#define PORTNUM2PIN(p,n)    (((p)<<5) + (n))
+#define PIN2PORT(p)         (((p)>>5) & 0x07)
+#define PIN2NUM(p)          ((p) & 0x1F)
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-
+typedef uint8_t pin_t;
+enum { PA, PB, PC, PD, PE };
 
 /*******************************************************************************
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-// +ej: extern unsigned int anio_actual;+
-
+void I2C_Init(pin_t pin);
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
