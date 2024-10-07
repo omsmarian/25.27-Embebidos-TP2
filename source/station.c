@@ -1,64 +1,36 @@
 /***************************************************************************//**
-  @file     fsm.c
-  @brief    Finite State Machine Implementation
-  @author   Group 4, based on the work of Daniel Jacoby
+  @file     station.c
+  @brief    K64F stations communications handler, using CAN bus
+  @author   Group 4
  ******************************************************************************/
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "fsm.h"
+#include "board.h"
+#include "pisr.h"
+#include "timer.h"
+#include "station.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define TABLE_END		EVENTS_CANT
+#define DEVELOPMENT_MODE			1
 
-// Number of edges per state (transitions) /////////////////////////////////////
-#define STATE_0_EDGES	3														// Extra space for default transition
-#define STATE_1_EDGES	2
-// Add more state edges here
+#define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-/*
- * @brief Do nothing
- */
-static void pass (void);
-
-/*
- * @brief Reset the FSM
- */
-static void reset (void);
-
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
-
-// State-transition tables /////////////////////////////////////////////////////
-
-static fsm_state_t READ_ORIENTATION[];
-static fsm_state_t TRANSMIT_CAN[];
-static fsm_state_t RECEIVE_CAN[];
-static fsm_state_t TRASMIT_UART[];
-static fsm_state_t CHECK_UPDATE[];
-static fsm_state_t WAIT[];
-static fsm_state_t ERROR[];
-static fsm_state_t END[];
-
-static fsm_state_t CHECK_UPDATE[] = { {I2C_MSG, READ_ORIENTATION, updateAngle},
-		   							  {TABLE_END, END, reset} };
-
-static fsm_state_t READ_ORIENTATION[] = {TABLE_END,	END, reset};
-
-// Add more states here
 
 
 /*******************************************************************************
@@ -67,36 +39,18 @@ static fsm_state_t READ_ORIENTATION[] = {TABLE_END,	END, reset};
  *******************************************************************************
  ******************************************************************************/
 
-fsm_state_t * fsm (fsm_state_t * state, fsm_event_t event)
-{
-   	while ((state->event != event) && (state->event != TABLE_END))
-		++state;
-	
-	(* state->callback)();
-
-	return state->next_state;
-}
-
-fsm_state_t * fsmInit (void)
-{
- 	return CHECK_UPDATE;
-}
+// Main Services ///////////////////////////////////////////////////////////////
 
 
 /*******************************************************************************
  *******************************************************************************
-                        LOCAL FUNCTION DEFINITIONS
+						LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-// Callback functions //////////////////////////////////////////////////////////
+// ISR Functions ///////////////////////////////////////////////////////////////
 
-static void pass (void) {}
-static void reset (void) {}
+////////////////////////////////////////////////////////////////////////////////
 
-static void updateAngle (void)
-{
-	// Update angle
-}
 
 /******************************************************************************/

@@ -12,23 +12,19 @@
 #include "fsm.h"
 #include "gpio.h"
 #include "hardware.h"
+#include "sensor.h"
+#include "station.h"
 #include "timer.h"
 #include "uart.h"
+
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 /*
- * @brief Check for events
- * @return True if there was an event
- */
-bool getStatus (void);
-
-/*
- * @brief Get the event that occurred
- * @return Event to be processed by the FSM
- * @note This function should be called only if getStatus() returns true
+ * @brief Check if an event occurred (new message in any peripheral) and get it
+ * @return Event to be processed by the FSM, EVENTS_CANT if there was no event
  */
 fsm_event_t getEvent (void);
 
@@ -39,6 +35,8 @@ fsm_event_t getEvent (void);
 
 static fsm_state_t * state = NULL;
 // static fsm_event_t event = EVENTS_CANT;
+
+static int8_t angle;
 
 
 /*******************************************************************************
@@ -55,18 +53,31 @@ void App_Init (void)
 						 UART_STOPS_1,
 						 UART_RX_TX_ENABLED,
 						 UART_FIFO_RX_TX_ENABLED};
+
 	uartInit(UART0_ID, config);
-
+	sensorInit();
+	// i2cmInit(I2C0_ID, 100000);
+	// canInit(CAN0_ID, 500000);
 	timerInit();
-
 	state = fsmInit();
 }
 
 /* Función que se llama constantemente en un ciclo infinito */
 void App_Run (void)
 {
-	if(getStatus())
-		state = fsm(state, getEvent());
+	// fsm_event_t event = getEvent();
+	// if(event != EVENTS_CANT)
+	// 	state = fsm(state, event);
+
+	// if(uartIsRxMsg(UART0_ID))
+	// 	// Do something
+	// else if(i2cIsRxMsg(I2C0_ID))
+	// {
+	// 	i2cReadMsg(I2C0_ID, &angle, 1);
+	// 	state = fsm(state, I2C_MSG);
+	// }
+	// else if(canIsRxMsg(CAN0_ID))
+	// 	// Do something
 }
 
 
@@ -76,14 +87,18 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
-bool getStatus(void)
+fsm_event_t getEvent (void)
 {
-	// Check for events
-}
+	fsm_event_t event = EVENTS_CANT;
 
-fsm_event_t getEvent(void)
-{
-	// Get event
+	// if(uartIsRxMsg(UART0_ID))
+	// 	event = UART_MSG;
+	// else if(i2cmIsRxMsg(I2C0_ID))
+	// 	event = I2C_MSG;
+	// else if(canIsRxMsg(CAN0_ID))
+	// 	event = CAN_MSG;
+
+	return event;
 }
 
 

@@ -14,21 +14,34 @@
 typedef struct transition_edge fsm_state_t;
 struct transition_edge
 {
-	fsm_event_t  event;
+	fsm_event_t event;
 	fsm_state_t * next_state;
 	void (* callback)(void);
 };
 
 typedef enum
 {
-	EVENT_0,
-	EVENT_1,
-	EVENT_2,
-	// Add more events here
+	UART_MSG,
+	I2C_MSG,
+	CAN_MSG,
 
 	EVENTS_CANT
 } fsm_event_t;
 
+typedef enum
+{
+	INIT,
+	READ_ORIENTATION,
+	TRANSMIT_CAN,
+	RECEIVE_CAN,
+	TRASMIT_UART,
+	CHECK_UPDATE,
+	WAIT,
+	ERROR,
+	END,
+
+	STATES_CANT
+} fsm_state_id_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
