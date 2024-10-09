@@ -49,6 +49,7 @@ typedef struct{
 	I2C_Address_t slave_address;
   I2C_Address_t reg_address;
 	size_t index;
+	bool reg_address_flag;
 	//size_t W_index;
 }I2C_Object_t;
 
