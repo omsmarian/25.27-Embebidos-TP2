@@ -288,6 +288,12 @@ void I2C_IRQHandler(I2C_Module_t module)
           I2C_SET_RX_MODE;
           I2C_REPEAT_START_SIGNAL;
           I2C_WRITE_DATA(I2C_ADDRESS_MASK | 0x00000001); // despues ponerle una macro
+          
+          // Si el tamaño es chico ya mando el NACK
+          if(I2C_SEQUENCE_SIZE == 1)
+            I2C_SET_NACK;
+          
+          // Dummy read
           dummy = I2C_READ_DATA;
         }
       }
@@ -296,15 +302,31 @@ void I2C_IRQHandler(I2C_Module_t module)
   // en modo lectura
   else
   {
-    // si me queda por leer
-    if(I2C_INDEX < I2C_SEQUENCE_SIZE - 1)
+    // Si le resto 1 a el size me da el ultimo
+    // Estoy en el ultimo para leer
+    if(I2C_INDEX == I2C_SEQUENCE_SIZE - 1)
     {
-      
+      I2C_STOP_SIGNAL;
+      I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
+      I2C_INDEX++;
+      I2C_STATUS = I2C_Done;
     }
-    // si me queda uno por leer
-    else if(I2C_INDEX == I2C_SEQUENCE_SIZE)
+    // No estoy en el ultimo para leer
+    else if(I2C_INDEX < (I2C_SEQUENCE_SIZE - 1))
     {
-
+      // Si le resto 2 me da el anteultimo
+      if(I2C_INDEX == (I2C_SEQUENCE_SIZE - 2))
+      {
+        I2C_SET_NACK;         // Es el NACK, toco TXAK 
+      }
+      I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
+      I2C_INDEX++;
     }
   }
+}
+
+
+__ISR__ I2C0_IRQHandler(void)
+{
+	I2C_IRQHandler(I2C0_M);
 }
