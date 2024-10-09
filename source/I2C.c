@@ -49,6 +49,16 @@
 #define I2C_CLEAR_NACK      	 	  (I2C_array[module]->C1 &= ~I2C_C1_TXAK_MASK)
 
 
+//I2C Object Macros
+#define I2C_INDEX                 (I2C_Objects[module].index)
+#define I2C_STATUS                (I2C_Objects[module].status)
+#define I2C_MODE                  (I2C_Objects[module].mode)
+#define I2C_SLAVE_ADDRESS         (I2C_Objects[module].slave_address)
+#define I2C_REG_ADDRESS           (I2C_Objects[module].reg_address)
+#define I2C_SEQUENCE_SIZE         (I2C_Objects[module].sequence_size)
+#define I2C_REG_ADDRESS_SENT      (I2C_Objects[module].reg_address_flag)
+#define I2C_SEQUENCE_ARR          (I2C_Objects[module].sequence_arr)
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -97,7 +107,7 @@ static uint32_t ICR2SCLDivider[] = {
 	1280, 1536, 1920, 1280, 1536, 1792, 2048, 2304, 2560, 3072, 3840
 };
 
-
+uint8_t dummy;
 
 /*******************************************************************************
  *******************************************************************************
@@ -168,13 +178,14 @@ I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t se
       I2C_Objects[module].sequence_arr = sequence_arr;
       I2C_Objects[module].sequence_size = sequence_size;
       I2C_Objects[module].index = 0;
+      I2C_Objects[module].reg_address_flag = false;
       I2C_Objects[module].mode = mode;
     }
 
 
-  // 1 es R, 0 es W
   I2C_SET_TX_MODE;
   I2C_START_SIGNAL;
+  // 1 es R, 0 es W
   I2C_WRITE_DATA(I2C_ADDRESS_MASK);   // always start in write mode
   I2C_Objects[module].status = I2C_Busy;
 
@@ -220,9 +231,80 @@ void I2C_IRQHandler(I2C_Module_t module)
 {
   I2C_CLEAR_IRQ_FLAG;
 
+  // En modo transmision
   if(I2C_GET_TX_MODE)
   {
-    
+    // If write
+    if(I2C_MODE == I2C_Write)
+    {
+      // si me queda por mandar
+      if(I2C_INDEX < I2C_SEQUENCE_SIZE)
+      {
+        // RXAK = 0 ta bien, RXAK = 1 ta mal
+        if(!I2C_GET_RX_ACK)
+        {
+          // si no mande el reg_address
+          if(!I2C_REG_ADDRESS_SENT)
+          {
+            I2C_WRITE_DATA(I2C_REG_ADDRESS);
+            I2C_REG_ADDRESS_SENT = true;
+          }
+          // si ya mande el addr mando el siguiente byte
+          else
+          {
+            I2C_WRITE_DATA(I2C_SEQUENCE_ARR[I2C_INDEX]);
+            I2C_INDEX++;
+          }
+        }
+        // si no me mandaron el ACK
+        else
+        {
+          I2C_STATUS = I2C_Error;
+          I2C_STOP_SIGNAL;
+        }
+      }
+      // si ya mande todo
+      else if(I2C_INDEX == I2C_SEQUENCE_SIZE)
+      {
+        I2C_STATUS = I2C_Done;
+        I2C_STOP_SIGNAL;
+      }
+    }
+    // If read
+    else if(I2C_MODE == I2C_Read)
+    {
+      // RXAK = 0 ta bien, RXAK = 1 ta mal
+      if(!I2C_GET_RX_ACK)
+      {
+        // si no mande el reg_address
+        if(!I2C_REG_ADDRESS_SENT)
+        {
+          I2C_WRITE_DATA(I2C_REG_ADDRESS);
+          I2C_REG_ADDRESS_SENT = true;
+        }
+        // si ya mande el register address mando el repeated start
+        else
+        {
+          I2C_SET_RX_MODE;
+          I2C_REPEAT_START_SIGNAL;
+          I2C_WRITE_DATA(I2C_ADDRESS_MASK | 0x00000001); // despues ponerle una macro
+          dummy = I2C_READ_DATA;
+        }
+      }
+    }
   }
+  // en modo lectura
   else
+  {
+    // si me queda por leer
+    if(I2C_INDEX < I2C_SEQUENCE_SIZE - 1)
+    {
+      
+    }
+    // si me queda uno por leer
+    else if(I2C_INDEX == I2C_SEQUENCE_SIZE)
+    {
+
+    }
+  }
 }
