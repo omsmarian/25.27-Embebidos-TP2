@@ -19,7 +19,7 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-// #define FXOS8700CQ_STATUS		0x00
+// #define FXOS8700CQ_STATUS	0x00
 // #define FXOS8700CQ_OUT_X_MSB	0x01
 // #define FXOS8700CQ_OUT_X_LSB	0x02
 // #define FXOS8700CQ_OUT_Y_MSB	0x03
@@ -35,19 +35,36 @@
 // #define FXOS8700CQ_CTRL_REG5	0x2E
 
 // FXOS8700CQ I2C address
-#define FXOS8700CQ_SLAVE_ADDR 0x1E // with pins SA0=0, SA1=0
+#define FXOS8700CQ_SLAVE_ADDR	0x1D											// With pins SA0 = 0, SA1 = 0
 
 // FXOS8700CQ internal register addresses
-#define FXOS8700CQ_STATUS 0x00
-#define FXOS8700CQ_WHOAMI 0x0D
-#define FXOS8700CQ_XYZ_DATA_CFG 0x0E
-#define FXOS8700CQ_CTRL_REG1 0x2A
-#define FXOS8700CQ_M_CTRL_REG1 0x5B
-#define FXOS8700CQ_M_CTRL_REG2 0x5C
-#define FXOS8700CQ_WHOAMI_VAL 0xC7
+#define FXOS8700CQ_STATUS		0x00
+#define FXOS8700CQ_WHOAMI		0x0D
+#define FXOS8700CQ_XYZ_DATA_CFG	0x0E
+#define FXOS8700CQ_CTRL_REG1	0x2A
+#define FXOS8700CQ_M_CTRL_REG1	0x5B
+#define FXOS8700CQ_M_CTRL_REG2	0x5C
+#define FXOS8700CQ_F_SETUP		0x09
 
-// number of bytes to be read from the FXOS8700CQ
-#define FXOS8700CQ_READ_LEN 13 // status plus 6 channels = 13 bytes
+#define FXOS8700CQ_WHOAMI_VAL	0xC7											// Production devices
+
+// Number of bytes to be read from the FXOS8700CQ
+#define FXOS8700CQ_READ_LEN		13												// Status + 6 channels (13 bytes)
+
+#define FXOS8700CQ_ACCEL_SENS	0.000244f										// Sensitivity in g/LSB
+#define FXOS8700CQ_MAGN_SENS	0.1f											// Sensitivity in uT/LSB
+
+#define FXOS8700CQ_ACCEL_RANGE	4												// Accelerometer range in g
+#define FXOS8700CQ_MAGN_RANGE	120												// Magnetometer range in uT
+
+#define FXOS8700CQ_ACCEL_LSB	(FXOS8700CQ_ACCEL_SENS * FXOS8700CQ_ACCEL_RANGE)	// Accelerometer LSB in g
+#define FXOS8700CQ_MAGN_LSB		(FXOS8700CQ_MAGN_SENS * FXOS8700CQ_MAGN_RANGE)	// Magnetometer LSB in uT
+
+#define FXOS8700CQ_ACCEL_LSB_2G	0.000244f										// Accelerometer LSB in g for 2g range
+#define FXOS8700CQ_ACCEL_LSB_4G	0.000488f										// Accelerometer LSB in g for 4g range
+#define FXOS8700CQ_ACCEL_LSB_8G	0.000976f										// Accelerometer LSB in g for 8g range
+
+#define ANGLE_THRESHOLD			2												// Threshold for angle change detection
 
 
 /*******************************************************************************

@@ -101,11 +101,11 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 		uartSetBaudRate(id, UART_HAL_DEFAULT_BAUDRATE);
 
 		/* Configure UARTx Rx and Tx pins */
-		*pinRxPCR = 0x0;															//Clear all bits
+		*pinRxPCR = 0x0;														//Clear all bits
 		*pinTxPCR = 0x0;
-		*pinRxPCR |= PORT_PCR_MUX(PORT_mAlt3); 										//Set MUX to UARTx
+		*pinRxPCR |= PORT_PCR_MUX(PORT_mAlt3); 									//Set MUX to UARTx
 		*pinTxPCR |= PORT_PCR_MUX(PORT_mAlt3);
-		*pinRxPCR |= PORT_PCR_IRQC(PORT_eDisabled);									//Disable interrupts (UART IRQs will handle them)
+		*pinRxPCR |= PORT_PCR_IRQC(PORT_eDisabled);								//Disable interrupts (UART IRQs will handle them)
 		*pinTxPCR |= PORT_PCR_IRQC(PORT_eDisabled);
 
 		/* Baudrate Setup */

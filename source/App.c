@@ -36,7 +36,10 @@ fsm_event_t getEvent (void);
 static fsm_state_t * state = NULL;
 // static fsm_event_t event = EVENTS_CANT;
 
-static int8_t angle;
+static ticks_t timeout;
+
+// static int8_t angle;
+static sensor_t data;
 
 
 /*******************************************************************************
@@ -59,6 +62,7 @@ void App_Init (void)
 	// i2cmInit(I2C0_ID, 100000);
 	// canInit(CAN0_ID, 500000);
 	timerInit();
+	timeout = timerStart(TIMER_MS2TICKS(1000));
 	state = fsmInit();
 }
 
@@ -78,6 +82,26 @@ void App_Run (void)
 	// }
 	// else if(canIsRxMsg(CAN0_ID))
 	// 	// Do something
+
+	if(timerExpired(timeout))
+	{
+		if(sensorIsRxMsg())
+		{
+			data = *sensorGetData();
+			stationSendData(&data);
+			processData(&data);
+			uartWriteMsg(UART0_ID, &data, sizeof(sensor_t));
+		}
+
+		if(stationIsRxMsg())
+		{
+			data = *stationGetData(&data);
+			processData(&data);
+			uartWriteMsg(UART0_ID, &data, sizeof(sensor_t));
+		}
+
+		timeout = timerStart(TIMER_MS2TICKS(1000));
+	}
 }
 
 
@@ -87,18 +111,23 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
-fsm_event_t getEvent (void)
+// fsm_event_t getEvent (void)
+// {
+// 	fsm_event_t event = EVENTS_CANT;
+
+// 	// if(uartIsRxMsg(UART0_ID))
+// 	// 	event = UART_MSG;
+// 	// else if(i2cmIsRxMsg(I2C0_ID))
+// 	// 	event = I2C_MSG;
+// 	// else if(canIsRxMsg(CAN0_ID))
+// 	// 	event = CAN_MSG;
+
+// 	return event;
+// }
+
+void processData (sensor_t * data)
 {
-	fsm_event_t event = EVENTS_CANT;
-
-	// if(uartIsRxMsg(UART0_ID))
-	// 	event = UART_MSG;
-	// else if(i2cmIsRxMsg(I2C0_ID))
-	// 	event = I2C_MSG;
-	// else if(canIsRxMsg(CAN0_ID))
-	// 	event = CAN_MSG;
-
-	return event;
+	// Do something
 }
 
 
