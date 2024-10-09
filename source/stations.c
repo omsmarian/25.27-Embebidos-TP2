@@ -1,7 +1,10 @@
 /***************************************************************************//**
-  @file     station.c
+  @file     stations.c
   @brief    K64F stations communications handler, using CAN bus
-  @author   Group 4
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
  ******************************************************************************/
 
 /*******************************************************************************
@@ -9,9 +12,9 @@
  ******************************************************************************/
 
 #include "board.h"
-#include "pisr.h"
+#include "can.h"
 #include "timer.h"
-#include "station.h"
+#include "stations.h"
 
 
 /*******************************************************************************
@@ -40,6 +43,38 @@
  ******************************************************************************/
 
 // Main Services ///////////////////////////////////////////////////////////////
+
+void stationsInit(void)
+{
+	canInit();		// Initialize CAN
+	timerInit();	// Initialize Timer
+}
+
+void stationsSend(stations_id_t station, uint8_t data)
+{
+	canSend(station, data);
+}
+
+void stationsSendAll(uint8_t data)
+{
+	for (uint8_t i = 0; i < STATIONS_CANT; i++)
+	{
+		canSend(i, data);
+	}
+}
+
+void stationsReceive(stations_id_t station, uint8_t data)
+{
+	canReceive(station, data);
+}
+
+void stationsReceiveAll(uint8_t data)
+{
+	for (uint8_t i = 0; i < STATIONS_CANT; i++)
+	{
+		canReceive(i, data);
+	}
+}
 
 
 /*******************************************************************************

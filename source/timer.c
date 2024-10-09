@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     timer.c
   @brief    Timer driver. Simple implementation, support multiple timers
-  @author   Group 4, based on the work of Nicolás Magliola
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Nicolás Magliola
  ******************************************************************************/
 
 /*******************************************************************************

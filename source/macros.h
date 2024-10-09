@@ -1,7 +1,10 @@
 /***************************************************************************//**
   @file     macros.h
   @brief    Generic MACROs
-  @author   Group 4
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
  ******************************************************************************/
 
 #ifndef _MACROS_H_

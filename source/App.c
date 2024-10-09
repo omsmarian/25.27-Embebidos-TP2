@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     App.c
   @brief    Application functions
-  @author   Group 4, based on the work of Nicolás Magliola
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Nicolás Magliola
  ******************************************************************************/
 
 /*******************************************************************************
@@ -13,6 +17,7 @@
 #include "gpio.h"
 #include "hardware.h"
 #include "sensor.h"
+#include "serial.h"
 #include "station.h"
 #include "timer.h"
 #include "uart.h"
@@ -48,25 +53,26 @@ static sensor_t data;
  *******************************************************************************
  ******************************************************************************/
 
-/* Función que se llama 1 vez, al comienzo del programa */
+/*
+ * @brief Initialize the application
+ * @note This function is called once at the beginning of the main program
+ */
 void App_Init (void)
 {
-	uart_cfg_t config = {9600, UART_MODE_8,
-						 UART_PARITY_NONE,
-						 UART_STOPS_1,
-						 UART_RX_TX_ENABLED,
-						 UART_FIFO_RX_TX_ENABLED};
-
-	uartInit(UART0_ID, config);
+	serialInit();
 	sensorInit();
-	// i2cmInit(I2C0_ID, 100000);
-	// canInit(CAN0_ID, 500000);
+	stationInit();
+
 	timerInit();
 	timeout = timerStart(TIMER_MS2TICKS(1000));
+
 	state = fsmInit();
 }
 
-/* Función que se llama constantemente en un ciclo infinito */
+/*
+ * @brief Run the application
+ * @note This function is called constantly in an infinite loop
+ */
 void App_Run (void)
 {
 	// fsm_event_t event = getEvent();
@@ -89,14 +95,14 @@ void App_Run (void)
 		{
 			data = *sensorGetData();
 			stationSendData(&data);
-			processData(&data);
+			serialSendData(processData(&data));
 			uartWriteMsg(UART0_ID, &data, sizeof(sensor_t));
 		}
 
 		if(stationIsRxMsg())
 		{
 			data = *stationGetData(&data);
-			processData(&data);
+			serialSendData(processData(&data));
 			uartWriteMsg(UART0_ID, &data, sizeof(sensor_t));
 		}
 
@@ -125,9 +131,11 @@ void App_Run (void)
 // 	return event;
 // }
 
-void processData (sensor_t * data)
+char* processData (sensor_t* data)
 {
-	// Do something
+	// static char msg[32];
+	// sprintf(msg, "Roll: %d, Pitch: %d, Yaw: %d", data->roll, data->pitch, data->yaw);
+	// return msg;
 }
 
 

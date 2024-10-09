@@ -1,7 +1,10 @@
 /***************************************************************************//**
   @file     sensor.h
   @brief    FXOS8700CQ accelerometer and magnetometer driver for K64F
-  @author   Group 4
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
  ******************************************************************************/
 
 #ifndef _SENSOR_H_
@@ -65,7 +68,7 @@
 #define FXOS8700CQ_ACCEL_LSB_8G	0.000976f										// Accelerometer LSB in g for 8g range
 
 #define ANGLE_THRESHOLD			2												// Threshold for angle change detection
-
+#define SENSOR_FREQUENCY_HZ		100												// Sensor data rate in Hz
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -85,7 +88,8 @@ typedef enum
 {
 	ROLL,
 	PITCH,
-	YAW
+	YAW,
+	ALL
 } sensor_axis_t;
 
 
@@ -94,10 +98,21 @@ typedef enum
  ******************************************************************************/
 
 /**
- * @brief  Get roll, pitch and yaw angles from the sensor
- * @return Sensor data
+ * @brief Initialize the sensor module
+ * @return Initialization succeed
  */
-sensor_t * sensorGetData (void);
+bool sensorInit (void);
+
+/* @brief Check if new data was recieved given ANGLE_THRESHOLD
+ * @return true if new sensor data is available
+*/
+bool sensorGetStatus (void);
+
+/**
+ * @brief  Get roll, pitch and yaw angles from the sensor
+ * @return Sensor data (delta angles)
+ */
+sensor_t* sensorGetData (void);
 
 
 /*******************************************************************************

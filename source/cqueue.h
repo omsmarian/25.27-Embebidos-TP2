@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     cqueue.h
   @brief    Circular Queue / Ring Buffer / FIFO Implementation
-  @author   Group 4, based on the work of Daniel Jacoby
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Daniel Jacoby
  ******************************************************************************/
 
 #ifndef _CQUEUE_H_

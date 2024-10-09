@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     board.h
   @brief    Board management
-  @author   Grupo 4, based on the work of Nicolás Magliola
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Nicolás Magliola
  ******************************************************************************/
 
 #ifndef _BOARD_H_

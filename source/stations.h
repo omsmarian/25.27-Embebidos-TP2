@@ -1,15 +1,14 @@
 /***************************************************************************//**
-  @file     timer.h
-  @brief    Timer driver. Simple implementation, support multiple timers.
+  @file     stations.h
+  @brief    K64F stations communications handler, using CAN bus
   @author   Group 4: - Oms, Mariano
                      - Solari Raigoso, Agustín
                      - Wickham, Tomás
                      - Vieira, Valentin Ulises
-  @note     Based on the work of Nicolás Magliola
  ******************************************************************************/
 
-#ifndef _TIMER_H_
-#define _TIMER_H_
+#ifndef _STATIONS_H_
+#define _STATIONS_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
@@ -23,15 +22,20 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define TIMER_TICK_MS       1
-#define TIMER_MS2TICKS(ms)	((ms)/TIMER_TICK_MS)
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef int32_t ticks_t;
+typedef enum {
+	STATION_1,
+	STATION_2,
+	STATION_3,
+	STATION_4,
+	STATION_5,
+
+	STATIONS_CANT
+} stations_id_t;
 
 
 /*******************************************************************************
@@ -39,38 +43,51 @@ typedef int32_t ticks_t;
  ******************************************************************************/
 
 /**
- * @brief Initialice timer and corresponding peripheral
+ * @brief Initialize the stations module
  */
-void timerInit(void);
-
-
-// Non-Blocking services ///////////////////////////////////////////////////////
+void stationsInit(void);
 
 /**
- * @brief Begin to run a new timer
- * @param ticks time until timer expires, in ticks
- * @return Timeout value
+ * @brief Send data to a station
+ * @param station Station to send data to
+ * @param data Data to send
  */
-ticks_t timerStart(ticks_t ticks);
+void stationsSend(stations_id_t station, uint8_t data);
 
 /**
- * @brief Verify if a timer has run timeout
- * @param timeout timeout to check for expiration
- * @return 1 = timer expired
+ * @brief Send data to all stations
+ * @param data Data to send
  */
-bool timerExpired(ticks_t timeout);
-
-
-// Blocking services ///////////////////////////////////////////////////////////
+void stationsSendAll(uint8_t data);
 
 /**
- * @brief Wait the specified time.
- * @param ticks time to wait in ticks
+ * @brief Receive data from a station
+ * @param station Station to receive data from
+ * @param data Data received
  */
-void timerDelay(ticks_t ticks);
+void stationsReceive(stations_id_t station, uint8_t data);
+
+/**
+ * @brief Receive data from all stations
+ * @param data Data received
+ */
+void stationsReceiveAll(uint8_t data);
+
+/**
+ * @brief Set the callback for a station
+ * @param station Station to set the callback for
+ * @param callback Callback to set
+ */
+void stationsSetCallback(stations_id_t station, void (*callback)(uint8_t));
+
+/**
+ * @brief Set the callback for all stations
+ * @param callback Callback to set
+ */
+void stationsSetCallbackAll(void (*callback)(uint8_t));
 
 
 /*******************************************************************************
  ******************************************************************************/
 
-#endif // _TIMER_H_
+#endif // _STATIONS_H_

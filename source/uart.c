@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     magcard.c
   @brief    UART Driver for K64F. Blocking, Non-Blocking and using FIFO feature
-  @author   Group 4, based on the work of Daniel Jacoby
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Daniel Jacoby
  ******************************************************************************/
 
 /*******************************************************************************
@@ -38,9 +42,9 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-void uartHandler (void);
-void uartUpdate (uart_id_t id);
-void uartSetBaudRate (uart_id_t id, uint32_t br);
+void handler (void);
+void update (uart_id_t id);
+void setBaudRate (uart_id_t id, uint32_t br);
 
 
 /*******************************************************************************
@@ -63,13 +67,13 @@ static pin_t const			UARTx_PINS[]	= { UART0_RX_PIN, UART0_TX_PIN,
 											 	UART4_RX_PIN, UART4_TX_PIN,
 											 	UART5_RX_PIN, UART5_TX_PIN };
 
-static bool uart_init[UART_CANT_IDS];
-static queue_id_t uart_rx_queue[UART_CANT_IDS];
-static queue_id_t uart_tx_queue[UART_CANT_IDS];
+static bool init[UART_CANT_IDS];
+static queue_id_t rx_queue[UART_CANT_IDS];
+static queue_id_t tx_queue[UART_CANT_IDS];
 
 // static tim_id_t uart_timers[UART_CANT_IDS];
 
-static uart_id_t uart_irq = UART_CANT_IDS;
+static uart_id_t irq = UART_CANT_IDS;
 
 
 /*******************************************************************************
@@ -80,12 +84,10 @@ static uart_id_t uart_irq = UART_CANT_IDS;
 
 bool uartInit (uart_id_t id, uart_cfg_t config)
 {
-	if(!uart_init[id])
+	if(!init[id])
 	{
-		PINData_t pinRx = { PIN2PORT(UARTx_PINS[id * 2]), PIN2NUM(UARTx_PINS[id * 2]) };
-		PINData_t pinTx = { PIN2PORT(UARTx_PINS[id * 2 + 1]), PIN2NUM(UARTx_PINS[id * 2 + 1]) };
-		uint32_t * pinRxPCR = &(PORT_Ptrs[pinRx.port]->PCR[pinRx.num]);
-		uint32_t * pinTxPCR = &(PORT_Ptrs[pinTx.port]->PCR[pinTx.num]);
+		uint32_t* pinRxPCR = &(PORT_Ptrs[PIN2PORT(UARTx_PINS[id * 2])]->PCR[PIN2NUM(UARTx_PINS[id * 2])]);
+		uint32_t* pinTxPCR = &(PORT_Ptrs[PIN2PORT(UARTx_PINS[id * 2 + 1])]->PCR[PIN2NUM(UARTx_PINS[id * 2 + 1])]);
 
 		/* Enable the clock for UARTx */
 		(id < 4) ? (SIM->SCGC4 |= UART_Clks[id]) : (SIM->SCGC1 |= UART_Clks[id]);
@@ -98,7 +100,7 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 						   UART_C1_PE(config.parity != UART_PARITY_NONE) | UART_C1_PT(config.parity);
 
 		/* Set UARTx to default speed */
-		uartSetBaudRate(id, UART_HAL_DEFAULT_BAUDRATE);
+		setBaudRate(id, UART_HAL_DEFAULT_BAUDRATE);
 
 		/* Configure UARTx Rx and Tx pins */
 		*pinRxPCR = 0x0;														//Clear all bits
@@ -109,24 +111,10 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 		*pinTxPCR |= PORT_PCR_IRQC(PORT_eDisabled);
 
 		/* Baudrate Setup */
-		uartSetBaudRate(id, config.baudrate);
+		setBaudRate(id, config.baudrate);
 
 		/* Enable FIFO and configure watermarks */
-		UART_REG(id, CFIFO) |= UART_CFIFO_RXFLUSH_MASK | UART_CFIFO_TXFLUSH_MASK;
-		if(config.fifo == UART_FIFO_RX_ENABLED || config.fifo == UART_FIFO_RX_TX_ENABLED)
-		{
-			UART_REG(id, PFIFO) |= UART_PFIFO_RXFE_MASK;
-			uint8_t depth = (UART_REG(id, PFIFO) & UART_PFIFO_RXFIFOSIZE_MASK) >> UART_PFIFO_RXFIFOSIZE_SHIFT;
-			UART_REG(id, RWFIFO) = UART_RWFIFO_RXWATER((85 * (depth ? (2 << depth) : 1)) / 100);
-		}
-		if(config.fifo == UART_FIFO_TX_ENABLED || config.fifo == UART_FIFO_RX_TX_ENABLED)
-		{
-			UART_REG(id, PFIFO) |= UART_PFIFO_TXFE_MASK;
-			uint8_t depth = (UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT;
-			UART_REG(id, TWFIFO) = UART_TWFIFO_TXWATER(((15 * (depth ? (2 << depth) : 1)) / 100) + 1);
-		}
-		if(config.fifo == UART_FIFO_DISABLED)
-			UART_REG(id, PFIFO) &= ~(UART_PFIFO_RXFE_MASK | UART_PFIFO_TXFE_MASK);
+		configFifo(id, config.fifo);
 
 		/* Enable Tx and Rx IRQs for UARTx */
 		NVIC_EnableIRQ(UART_IRQn[id]);
@@ -138,39 +126,39 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 			UART_REG(id, C2) |= (UART_C2_RE_MASK); // | UART_C2_RIE_MASK);
 
 		/* Create queues for UARTx */
-		uart_rx_queue[id] = queueInit();
-		uart_tx_queue[id] = queueInit();
+		rx_queue[id] = queueInit();
+		tx_queue[id] = queueInit();
 
 		/* Register PISR */
-		pisrRegister(uartHandler, PISR_FREQUENCY_HZ / UART_FREQUENCY_HZ);
+		pisrRegister(handler, PISR_FREQUENCY_HZ / UART_FREQUENCY_HZ);
 
 		/* Set up a timer to update the queues */
 		// timerInit();
-		// timerStart(timerGetId(), TIMER_MS2TICKS(1), TIMER_MODE_PERIODIC, uartHandler);
+		// timerStart(timerGetId(), TIMER_MS2TICKS(1), TIMER_MODE_PERIODIC, handler);
 
-		uart_init[id] = true;
+		init[id] = true;
 	}
 
-	return uart_init[id];
+	return init[id];
 }
 
 // Main Services ///////////////////////////////////////////////////////////////
 
 uint8_t uartIsRxMsg (uart_id_t id)
 {
-	return !queueIsEmpty(uart_rx_queue[id]);
+	return !queueIsEmpty(rx_queue[id]);
 }
 
 uint8_t uartGetRxMsgLength (uart_id_t id)
 {
-	return queueSize(uart_rx_queue[id]);
+	return queueSize(rx_queue[id]);
 }
 
 uint8_t uartReadMsg (uart_id_t id, char* msg, uint8_t cant)
 {
 	uint8_t i = 0;
-	while (i < cant && !queueIsEmpty(uart_rx_queue[id]))
-		msg[i++] = queuePop(uart_rx_queue[id]);
+	while (i < cant && !queueIsEmpty(rx_queue[id]))
+		msg[i++] = queuePop(rx_queue[id]);
 
 	return i;
 }
@@ -178,15 +166,15 @@ uint8_t uartReadMsg (uart_id_t id, char* msg, uint8_t cant)
 uint8_t uartWriteMsg (uart_id_t id, const char* msg, uint8_t cant)
 {
 	uint8_t i = 0;
-	while (i < cant && !queueIsFull(uart_tx_queue[id]))
-		queuePush(uart_tx_queue[id], msg[i++]);
+	while (i < cant && !queueIsFull(tx_queue[id]))
+		queuePush(tx_queue[id], msg[i++]);
 
 	return i;
 }
 
 uint8_t uartIsTxMsgComplete (uart_id_t id)
 {
-	return queueIsEmpty(uart_tx_queue[id]);
+	return queueIsEmpty(tx_queue[id]);
 }
 
 
@@ -198,50 +186,50 @@ uint8_t uartIsTxMsgComplete (uart_id_t id)
 
 // ISR Functions ///////////////////////////////////////////////////////////////
 
-__ISR__ UART0_RX_TX_IRQHandler (void) {	uart_irq = UART0_ID; uartHandler(); }
-__ISR__ UART1_RX_TX_IRQHandler (void) {	uart_irq = UART1_ID; uartHandler(); }
-__ISR__ UART2_RX_TX_IRQHandler (void) {	uart_irq = UART2_ID; uartHandler(); }
-__ISR__ UART3_RX_TX_IRQHandler (void) {	uart_irq = UART3_ID; uartHandler(); }
-__ISR__ UART4_RX_TX_IRQHandler (void) {	uart_irq = UART4_ID; uartHandler(); }
-__ISR__ UART5_RX_TX_IRQHandler (void) {	uart_irq = UART5_ID; uartHandler(); }
+__ISR__ UART0_RX_TX_IRQHandler (void) {	irq = UART0_ID; handler(); }
+__ISR__ UART1_RX_TX_IRQHandler (void) {	irq = UART1_ID; handler(); }
+__ISR__ UART2_RX_TX_IRQHandler (void) {	irq = UART2_ID; handler(); }
+__ISR__ UART3_RX_TX_IRQHandler (void) {	irq = UART3_ID; handler(); }
+__ISR__ UART4_RX_TX_IRQHandler (void) {	irq = UART4_ID; handler(); }
+__ISR__ UART5_RX_TX_IRQHandler (void) {	irq = UART5_ID; handler(); }
 
-void uartHandler (void)															// Separate so that it can be called from the PISR/timer as well
+void handler (void)																// Separate so that it can be called from the PISR/timer as well
 {
-	if(uart_irq != UART_CANT_IDS)
+	if(irq != UART_CANT_IDS)
 	{
-		uartUpdate(uart_irq);
-		uart_irq = UART_CANT_IDS;
+		update(irq);
+		irq = UART_CANT_IDS;
 	}
 	else
 		for(uint8_t id = 0; id < UART_CANT_IDS; id++)
-			if(uart_init[id])
-				uartUpdate(id);
+			if(init[id])
+				update(id);
 }
 
-void uartUpdate (uart_id_t id)
+void update (uart_id_t id)
 {
 	uint8_t status = UART_REG(id, S1);											// Always needed (clears status register)
 
 	uint8_t count = UART_REG(id, RCFIFO);
-	while(count-- && !queueIsFull(uart_rx_queue[id]))
-		queuePush(uart_rx_queue[id], UART_REG(id, D));
+	while(count-- && !queueIsFull(rx_queue[id]))
+		queuePush(rx_queue[id], UART_REG(id, D));
 
 	count = UART_REG(id, TCFIFO);
 	while((count++ != ((UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT))
-		&& !queueIsEmpty(uart_tx_queue[id]))
-		UART_REG(id, D) = queuePop(uart_tx_queue[id]);
+		&& !queueIsEmpty(tx_queue[id]))
+		UART_REG(id, D) = queuePop(tx_queue[id]);
 
-	// // while(!(UART_REG(id, S1) & UART_SFIFO_RXEMPT_MASK) && !queueIsFull(uart_rx_queue[id]))
-	// while((UART_REG(id, S1) & UART_S1_RDRF_MASK) && !queueIsFull(uart_rx_queue[id]))
-	// 	queuePush(uart_rx_queue[id], UART_REG(id, D));
+	// // while(!(UART_REG(id, S1) & UART_SFIFO_RXEMPT_MASK) && !queueIsFull(rx_queue[id]))
+	// while((UART_REG(id, S1) & UART_S1_RDRF_MASK) && !queueIsFull(rx_queue[id]))
+	// 	queuePush(rx_queue[id], UART_REG(id, D));
 
-	// while((UART_REG(id, S1) & UART_S1_TDRE_MASK) && !queueIsEmpty(uart_tx_queue[id]))
-	// 	UART_REG(id, D) = queuePop(uart_tx_queue[id]);
+	// while((UART_REG(id, S1) & UART_S1_TDRE_MASK) && !queueIsEmpty(tx_queue[id]))
+	// 	UART_REG(id, D) = queuePop(tx_queue[id]);
 } // S1 could be read in the dedicated irq and set a flag checked by the periodic isr
 
 ////////////////////////////////////////////////////////////////////////////////
 
-void uartSetBaudRate (uart_id_t id, uint32_t br)
+void setBaudRate (uart_id_t id, uint32_t br)
 {
 	uint8_t brfa;
 	uint16_t sbr;
@@ -266,6 +254,25 @@ void uartSetBaudRate (uart_id_t id, uint32_t br)
 
 	/* Save off the current value of the UARTx_C4 register except for the BRFA */
 	UART_REG(id, C4) = (UART_REG(id, C4) & ~UART_C4_BRFA_MASK) | UART_C4_BRFA(brfa);
+}
+
+void configFifo (uart_id_t id, uart_fifo_t fifo)
+{
+	UART_REG(id, CFIFO) |= UART_CFIFO_RXFLUSH_MASK | UART_CFIFO_TXFLUSH_MASK;
+	if(fifo == UART_FIFO_RX_ENABLED || fifo == UART_FIFO_RX_TX_ENABLED)
+	{
+		UART_REG(id, PFIFO) |= UART_PFIFO_RXFE_MASK;
+		uint8_t depth = (UART_REG(id, PFIFO) & UART_PFIFO_RXFIFOSIZE_MASK) >> UART_PFIFO_RXFIFOSIZE_SHIFT;
+		UART_REG(id, RWFIFO) = UART_RWFIFO_RXWATER((85 * (depth ? (2 << depth) : 1)) / 100);
+	}
+	if(fifo == UART_FIFO_TX_ENABLED || fifo == UART_FIFO_RX_TX_ENABLED)
+	{
+		UART_REG(id, PFIFO) |= UART_PFIFO_TXFE_MASK;
+		uint8_t depth = (UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT;
+		UART_REG(id, TWFIFO) = UART_TWFIFO_TXWATER(((15 * (depth ? (2 << depth) : 1)) / 100) + 1);
+	}
+	if(fifo == UART_FIFO_DISABLED)
+		UART_REG(id, PFIFO) &= ~(UART_PFIFO_RXFE_MASK | UART_PFIFO_TXFE_MASK);
 }
 
 /*

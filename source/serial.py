@@ -1,8 +1,8 @@
 
 '''
 Reads incoming bytes from serial port,
-prints them on screen and sends them back,
-based on the work of Daniel Jacoby
+prints them on screen and sends them back.
+Based on the work of Daniel Jacoby.
 '''
 
 import serial

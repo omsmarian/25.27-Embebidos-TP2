@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     fsm.c
   @brief    Finite State Machine Implementation
-  @author   Group 4, based on the work of Daniel Jacoby
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Daniel Jacoby
  ******************************************************************************/
 
 /*******************************************************************************

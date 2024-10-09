@@ -1,7 +1,11 @@
 /***************************************************************************//**
   @file     cqueue.c
   @brief    Circular Queue / Ring Buffer / FIFO Implementation
-  @author   Group 4, based on the work of Daniel Jacoby
+  @author   Group 4: - Oms, Mariano
+                     - Solari Raigoso, Agustín
+                     - Wickham, Tomás
+                     - Vieira, Valentin Ulises
+  @note     Based on the work of Daniel Jacoby
  ******************************************************************************/
 
 /*******************************************************************************
@@ -26,7 +30,7 @@ typedef struct {
 	count_t front;
 	count_t rear;
 } queue_t;
-
+// TODO: Use void* for data_t and count_t
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
