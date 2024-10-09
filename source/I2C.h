@@ -28,7 +28,7 @@ typedef enum {I2C0_M, I2C1_M, I2C2_M} I2C_Module_t;
  * VARIABLE PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-void I2C_Init(pin_t pin);
+void I2C_Init(I2C_Module_t module);
 
 int32_t I2C_Trasmit();
 

@@ -85,8 +85,12 @@ void I2C_Init(I2C_Module_t module)
 {
 
   // Clock gating
-  SIM->SCG1 |= SIM_SCGC1_I2C2(HIGH);
-  SIM->SCG1 |= SIM_SCGC4_I2C1(HIGH) | SIM_SCGC4_I2C0(HIGH);
+  if(module == I2C0_M)
+    SIM->SCGC4 |= SIM_SCGC4_I2C0(HIGH);
+  else if(module == I2C1_M)
+    SIM->SCGC4 |= SIM_SCGC4_I2C1(HIGH);
+  else if(module == I2C2_M)
+    SIM->SCGC1 |= SIM_SCGC1_I2C2(HIGH);
 
 
   // Port configuration
@@ -101,13 +105,13 @@ void I2C_Init(I2C_Module_t module)
   I2C->F = I2C_F_MULT(F.mul) | I2C_F_ICR(F.icr);
 
   // Enable I2C and its interrupts
-  I2C->C1 = LOW | I2C_C1_IICIE(HIGH) | I2C_C1_IICEN(HIGH);
+  I2C->C1 = I2C_C1_IICIE(HIGH) | I2C_C1_IICEN(HIGH);
 
   // Enable I2C interuptiom
   I2C->S = I2C_S_IICIF(HIGH);
 
 
-  if(module == I2C0_M)
+  /*if(module == I2C0_M)
   {
     // SCL config
     Port_arr[PE]->PCR[I2C0_SCL_PIN] = LOW;            // Clear all bits
@@ -119,9 +123,15 @@ void I2C_Init(I2C_Module_t module)
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_MUX(PORT_mAlt5) | PORT_PCR_ODE(HIGH);
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_IRQC(PORT_eDisabled);
   }
-
+*/
   // Enable I2C interuptiom
   NVIC_EnableIRQ(I2C_IRQn[module]);
+}
+
+
+int32_t I2C_Trasmit()
+{
+  
 }
 
 /*******************************************************************************
