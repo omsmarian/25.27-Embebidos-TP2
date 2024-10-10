@@ -13,6 +13,7 @@
 
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -60,7 +61,7 @@ typedef struct{
 void I2C_Init(I2C_Module_t module);
 
 I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t sequence_size, 
-                          I2C_Address_t slave_address, I2C_Mode_t mode);
+                    I2C_Address_t slave_address, I2C_Address_t reg_address, I2C_Mode_t mode);
 
 
 /*******************************************************************************
