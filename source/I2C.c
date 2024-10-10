@@ -11,6 +11,8 @@
 #include "I2C.h"
 #include "hardware.h"
 #include "gpio.h"
+#include <stdlib.h>
+
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -32,21 +34,21 @@
 //I2C Register Macros
 #define I2C_WRITE_DATA(data)    	(I2C_arr[module]->D = data)
 #define I2C_ADDRESS_MASK			    ((I2C_Objects[module].slave_address & I2C_D_DATA_MASK)<<1)
-#define I2C_SET_NACK	         	  (I2C_array[module]->C1 |= I2C_C1_TXAK_MASK)
-#define I2C_CLEAR_NACK      	 	  (I2C_array[module]->C1 &= ~I2C_C1_TXAK_MASK)
-#define I2C_START_SIGNAL        	(I2C_array[module]->C1 |= I2C_C1_MST_MASK)
-#define I2C_STOP_SIGNAL          	(I2C_array[module]->C1 &= ~I2C_C1_MST_MASK)
-#define I2C_REPEAT_START_SIGNAL 	(I2C_array[module]->C1 |= I2C_C1_RSTA_MASK)
-#define I2C_READ_DATA           	(I2C_array[module]->D)
-#define I2C_STATUS_BYTE           (I2C_array[module]->S)
-#define I2C_GET_TX_MODE				    (I2C_array[module]->C1 & I2C_C1_TX_MASK)
-#define I2C_GET_IRQ_FLAG        	(I2C_array[module]->S & I2C_S_IICIF_MASK)
-#define I2C_CLEAR_IRQ_FLAG      	(I2C_array[module]->S |= I2C_S_IICIF_MASK)
-#define I2C_GET_RX_ACK				    (I2C_array[module]->S & I2C_S_RXAK_MASK)    // 0 = ACK received, 1 = no ACK received
-#define I2C_SET_RX_MODE         	(I2C_array[module]->C1 &= ~I2C_C1_TX_MASK)
-#define I2C_SET_TX_MODE         	(I2C_array[module]->C1 |= I2C_C1_TX_MASK)
-#define I2C_SET_NACK	         	  (I2C_array[module]->C1 |= I2C_C1_TXAK_MASK)
-#define I2C_CLEAR_NACK      	 	  (I2C_array[module]->C1 &= ~I2C_C1_TXAK_MASK)
+#define I2C_SET_NACK	         	  (I2C_arr[module]->C1 |= I2C_C1_TXAK_MASK)
+#define I2C_CLEAR_NACK      	 	  (I2C_arr[module]->C1 &= ~I2C_C1_TXAK_MASK)
+#define I2C_START_SIGNAL        	(I2C_arr[module]->C1 |= I2C_C1_MST_MASK)
+#define I2C_STOP_SIGNAL          	(I2C_arr[module]->C1 &= ~I2C_C1_MST_MASK)
+#define I2C_REPEAT_START_SIGNAL 	(I2C_arr[module]->C1 |= I2C_C1_RSTA_MASK)
+#define I2C_READ_DATA           	(I2C_arr[module]->D)
+#define I2C_STATUS_BYTE           (I2C_arr[module]->S)
+#define I2C_GET_TX_MODE				    (I2C_arr[module]->C1 & I2C_C1_TX_MASK)
+#define I2C_GET_IRQ_FLAG        	(I2C_arr[module]->S & I2C_S_IICIF_MASK)
+#define I2C_CLEAR_IRQ_FLAG      	(I2C_arr[module]->S |= I2C_S_IICIF_MASK)
+#define I2C_GET_RX_ACK				    (I2C_arr[module]->S & I2C_S_RXAK_MASK)    // 0 = ACK received, 1 = no ACK received
+#define I2C_SET_RX_MODE         	(I2C_arr[module]->C1 &= ~I2C_C1_TX_MASK)
+#define I2C_SET_TX_MODE         	(I2C_arr[module]->C1 |= I2C_C1_TX_MASK)
+#define I2C_SET_NACK	         	  (I2C_arr[module]->C1 |= I2C_C1_TXAK_MASK)
+#define I2C_CLEAR_NACK      	 	  (I2C_arr[module]->C1 &= ~I2C_C1_TXAK_MASK)
 
 
 //I2C Object Macros
@@ -150,7 +152,7 @@ void I2C_Init(I2C_Module_t module)
   I2C->S = I2C_S_IICIF(HIGH);
 
 
-  /*if(module == I2C0_M)
+  if(module == I2C0_M)
   {
     // SCL config
     Port_arr[PE]->PCR[I2C0_SCL_PIN] = LOW;            // Clear all bits
@@ -162,14 +164,13 @@ void I2C_Init(I2C_Module_t module)
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_MUX(PORT_mAlt5) | PORT_PCR_ODE(HIGH);
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_IRQC(PORT_eDisabled);
   }
-*/
   // Enable I2C interuptiom
   NVIC_EnableIRQ(I2C_IRQn[module]);
 }
 
 
 I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t sequence_size, 
-                    I2C_Address_t slave_address, I2C_Address_t reg_address, I2C_Mode_t mode);
+                    I2C_Address_t slave_address, I2C_Address_t reg_address, I2C_Mode_t mode)
 {
   if(sequence_arr != NULL && sequence_size)
     {
@@ -224,6 +225,7 @@ BaudRate_t SetBaudRate(uint32_t desiredBaudRate)
       }
     }
   }
+  return settings;
 }
 
 
