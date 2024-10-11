@@ -27,15 +27,17 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE			1
+#define DEVELOPMENT_MODE				1
+#define DEBUG_TP						1										// Debugging Test Points to measure ISR time
 
-#define PORT_REG(port, reg)			(PORT_Ptrs[port]->reg)
+#define PORT_REG(port, reg)				(PORT_Ptrs[port]->reg)
 
-#define UART_MAX_BAUDRATE			(__CORE_CLOCK__ / 16)
-#define UART_HAL_DEFAULT_BAUDRATE	9600
-#define UART_REG(id, reg)			(UART_Ptrs[id]->reg)
+#define UART_MAX_BAUDRATE				(__CORE_CLOCK__ / 16)
+#define UART_HAL_DEFAULT_BAUDRATE		9600
+#define UART_REG(id, reg)				(UART_Ptrs[id]->reg)
 
-#define DEBUG_TP					1											// Debugging Test Points to measure ISR time
+#define REG_WRITE(type, x, shift, mask)	(((type)(((type)(x)) << shift)) & mask)
+#define REG_READ(type, x, shift, mask)	(((type)(((type)(x)) & mask) >> shift))
 
 
 /*******************************************************************************
@@ -208,16 +210,15 @@ void handler (void)																// Separate so that it can be called from the
 
 void update (uart_id_t id)
 {
-	uint8_t status = UART_REG(id, S1);											// Always needed (clears status register)
+	uint8_t count, status = UART_REG(id, S1);									// Always needed (clears status register)
 
-	uint8_t count = UART_REG(id, RCFIFO);
+	count = UART_REG(id, RCFIFO);
 	while(count-- && !queueIsFull(rx_queue[id]))
 		queuePush(rx_queue[id], UART_REG(id, D));
 
 	count = UART_REG(id, TCFIFO);
-	while((count++ != ((UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT))
-		&& !queueIsEmpty(tx_queue[id]))
-		UART_REG(id, D) = queuePop(tx_queue[id]);
+	while((count++ != REG_READ(uint8_t, UART_REG(id, PFIFO), UART_PFIFO_TXFIFOSIZE_MASK, UART_PFIFO_TXFIFOSIZE_SHIFT))
+		&& !queueIsEmpty(tx_queue[id])) UART_REG(id, D) = queuePop(tx_queue[id]);
 
 	// // while(!(UART_REG(id, S1) & UART_SFIFO_RXEMPT_MASK) && !queueIsFull(rx_queue[id]))
 	// while((UART_REG(id, S1) & UART_S1_RDRF_MASK) && !queueIsFull(rx_queue[id]))

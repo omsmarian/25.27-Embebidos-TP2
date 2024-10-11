@@ -11,10 +11,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <math.h>
+// #include <math.h>
 
 #include "board.h"
-// #include "cqueue.h"
 #include "i2c.h"
 #include "pisr.h"
 #include "timer.h"
@@ -28,29 +27,69 @@
 #define DEVELOPMENT_MODE			1
 #define DEBUG_TP					1											// Debugging test points to measure ISR time
 
-#define CMP_IN(min, val, max)		(((min) <= (val)) && ((val) <= (max)))
-#define CMP_OUT(min, val, max)		(((val) < (min)) || ((max) < (val)))
+#define CMP_IN(min, val, max)		(((min) < (val)) && ((val) < (max)))		// In:  (min, max)
+#define CMP_OUT(min, val, max)		(((val) <= (min)) || ((max) <= (val)))		// Out: (-inf, min] U [max, +inf)
+
+#define M_PI						3.14159265358979323846
 
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef struct
+// typedef enum
+// {
+// 	NONE,
+// 	STATUS,
+// 	DATA
+// } reading_state_t;
+
+typedef enum
 {
-	int16_t x;
-	int16_t y;
-	int16_t z;
-} raw_data_t;
+	IDLE,
+	READING,
+} state_t;
 
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static bool sensorGetStatus (sensor_axis_t axis);
-static angle_t sensorGetAngle (sensor_axis_t axis);
-static sensor_t* sensorGetAllData (void);
+/**
+ * @brief Read data from the sensor
+ */
+static void readData (void);
+
+/**
+ * @brief Process raw data to get angles
+ */
+static void processData (void);
+
+// Helper Functions ////////////////////////////////////////////////////////////
+
+/**
+ * @brief Read data from the sensor
+ * @param reg Register to read
+ * @param data Buffer to store data
+ * @param len Data length
+ * @return I2C bus status
+ */
+static I2C_Status_t readRegs (uint8_t reg, uint8_t * data, size_t len);
+
+/**
+ * @brief Write data to the sensor
+ * @param reg Register to write
+ * @param data Data to write
+ * @param len Data length
+ * @return I2C bus status
+ */
+static I2C_Status_t writeRegs (uint8_t reg, uint8_t * data, size_t len);
+
+/**
+ * @brief Check I2C transmission state
+ * @return I2C bus status
+ */
+static I2C_Status_t transmitState (void);
 
 
 /*******************************************************************************
@@ -58,8 +97,7 @@ static sensor_t* sensorGetAllData (void);
  ******************************************************************************/
 
 static raw_data_t accel_data, magn_data;
-// static angle_t angle;
-static sensor_t data;
+static sensor_t data, data_prev;
 
 
 /*******************************************************************************
@@ -70,86 +108,70 @@ static sensor_t data;
 
 // Main Services ///////////////////////////////////////////////////////////////
 
-void sensorInit (void)
+bool sensorInit (void)
 {
-	i2c_cfg_t config = { I2C0_BAUDRATE, I2C0_MASTER_ADDR, I2C0_MASTER_MODE };
-	i2cInit(I2C0_ID, config);
-
 	bool status = true;
 	uint8_t databyte;
 
-	status = (readRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_WHOAMI, &databyte, 1) == 1) ||
-			 (databyte == FXOS8700CQ_WHOAMI_VAL) // Read and check the ID
+	I2C_InitModule(I2C0_M);
+
+	status = (writeRegs(FXOS8700CQ_WHOAMI, &databyte, 1) == 1) &&
+			 (databyte == FXOS8700CQ_WHOAMI_VAL); // Read and check the ID
 
 	databyte = 0x00; // Place into standby
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_CTRL_REG1,		&databyte, 1) == 1;
+	if (status) status = writeRegs(FXOS8700CQ_CTRL_REG1,	&databyte, 1) == 1;
 
 	databyte = 0x1F; // No auto calibration, one-shot magn reset or measurement, 8x os and hybrid mode
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_M_CTRL_REG1,	&databyte, 1) == 1;
+	if (status) status = writeRegs(FXOS8700CQ_M_CTRL_REG1,	&databyte, 1) == 1;
 
 	databyte = 0x20; // Map magn registers to follow accel, retain min/max latching and enable magn reset each cycle
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_M_CTRL_REG2,	&databyte, 1) == 1;
+	if (status) status = writeRegs(FXOS8700CQ_M_CTRL_REG2,	&databyte, 1) == 1;
 
 	databyte = 0x01; //No filter and accel range of +/-4g range with 0.488mg/LSB
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_XYZ_DATA_CFG,	&databyte, 1) == 1;
+	if (status) status = writeRegs(FXOS8700CQ_XYZ_DATA_CFG,	&databyte, 1) == 1;
 
 	databyte = 0x0D; // 200Hz data rate, low noise, 16 bit reads, out of standby and enable sampling
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_CTRL_REG1,		&databyte, 1) == 1;
+	if (status) status = writeRegs(FXOS8700CQ_CTRL_REG1,	&databyte, 1) == 1;
 
 	databyte = 0x00; // Disable FIFO
-	if (status) status = writeRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_F_SETUP,		&databyte, 1) == 1;
-
-	// Enable clock to I2C module
-	// SIM->SCGC4 |= SIM_SCGC4_I2C0_MASK;
-
-	// // Configure SDA and SCL pins
-	// PORT_Type * port = PORT_BASE_PTRS[FXOS8700CQ_I2C_SCL_PORT];
-	// port->PCR[FXOS8700CQ_I2C_SCL_PIN] = 0x0;
-	// port->PCR[FXOS8700CQ_I2C_SCL_PIN] |= PORT_PCR_MUX(PORT_mAlt5);
-	// port->PCR[FXOS8700CQ_I2C_SCL_PIN] |= PORT_PCR_IRQC(PORT_eDisabled);
-	// port = PORT_BASE_PTRS[FXOS8700CQ_I2C_SDA_PORT];
-	// port->PCR[FXOS8700CQ_I2C_SDA_PIN] = 0x0;
-	// port->PCR[FXOS8700CQ_I2C_SDA_PIN] |= PORT_PCR_MUX(PORT_mAlt5);
-	// port->PCR[FXOS8700CQ_I2C_SDA_PIN] |= PORT_PCR_IRQC(PORT_eDisabled);
+	if (status) status = writeRegs(FXOS8700CQ_F_SETUP,		&databyte, 1) == 1;
 
 	// Configure PISR for the sensor
 	pisrRegister(readData, PISR_FREQUENCY_HZ / SENSOR_FREQUENCY_HZ);
-
-	// // Create queues for sensor data
-	// int sensor_accel_queue = queueInit();
-	// int sensor_magn_queue = queueInit();
 
 	return status;
 }
 
 bool sensorGetStatus (sensor_axis_t axis)
 {
-	// processData();
+	bool update_roll, update_pitch, update_yaw;
 
-	data.roll	= (angle_t) (atan2(accelData->y,	accelData->z)	* 180 / M_PI);
-	data.pitch	= (angle_t) (atan2(accelData->x,	accelData->z)	* 180 / M_PI);
-	data.yaw	= (angle_t) (atan2(magnData->z,		magnData->x)	* 180 / M_PI);
+	processData();
 
-	return (axis == ROLL)	? CMP_OUT(-1, (float)(data.roll		/ ANGLE_THRESHOLD), 1) :
-	 	   (axis == PITCH)	? CMP_OUT(-1, (float)(data.pitch	/ ANGLE_THRESHOLD), 1) :
-	 	   (axis == YAW)	? CMP_OUT(-1, (float)(data.yaw		/ ANGLE_THRESHOLD), 1) : false;
+	update_roll		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.roll	- data.roll,	ANGLE_THRESHOLD);
+	update_pitch	= CMP_OUT(-ANGLE_THRESHOLD, data_prev.pitch	- data.pitch,	ANGLE_THRESHOLD);
+	update_yaw		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.yaw	- data.yaw,		ANGLE_THRESHOLD);
 
-	// return CMP_OUT(-1, (float)(data.roll	/ ANGLE_THRESHOLD), 1) ||
-	// 	   CMP_OUT(-1, (float)(data.pitch	/ ANGLE_THRESHOLD), 1) ||
-	// 	   CMP_OUT(-1, (float)(data.yaw		/ ANGLE_THRESHOLD), 1);
+	return (axis == ROLL)	? update_roll	:
+		   (axis == PITCH)	? update_pitch	:
+		   (axis == YAW)	? update_yaw	:
+		   (axis == ALL)	? (update_roll || update_pitch || update_yaw) : false;
 }
 
-angle_t sensorGetAngle (sensor_axis_t axis)
+raw_data_t* sensorGetAccelRawData (void)
 {
-	return (axis == ROLL)	? data.roll		:
-		   (axis == PITCH)	? data.pitch	:
-		   (axis == YAW)	? data.yaw		: 0;
+	return &accel_data;
 }
 
-sensor_t* sensorGetAllData (void)
+raw_data_t* sensorGetMagnRawData (void)
 {
-	accel_data = magn_data = (raw_data_t) { 0, 0, 0 };
-	data = (sensor_t) { 0, 0, 0 };
+	return &magn_data;
+}
+
+sensor_t* sensorGetAngleData (void)
+{
+	processData();
+	data_prev = data;
 
 	return &data;
 }
@@ -161,55 +183,120 @@ sensor_t* sensorGetAllData (void)
  *******************************************************************************
  ******************************************************************************/
 
-void readData (void)
+// static void readData (void)
+// {
+// 	static reading_state_t state = NONE;
+// 	static uint8_t status = 0, buffer[FXOS8700CQ_READ_LEN];
+
+// 	switch (state)
+// 	{
+// 		case NONE:																// Wait for the bus to be free and read status
+// 			if((transmitState() == I2C_Idle) && (readRegs(FXOS8700CQ_STATUS, &status, 1) == I2C_Busy))
+// 				state = STATUS;
+// 			break;
+
+// 		case STATUS:
+// 			if (transmitState() == I2C_Done)
+// 			{
+// 				if ((status &= 0x02) && (readRegs(FXOS8700CQ_OUT_X_MSB, buffer, FXOS8700CQ_READ_LEN) == I2C_Busy))											// Check if data is ready
+// 					state = DATA;
+// 				else
+// 					state = NONE;
+// 			}
+// 			else if (transmitState() == I2C_Error)
+// 				state = NONE;
+// 			break;
+		
+// 		case DATA:
+// 			if (transmitState() == I2C_Done)
+// 			{
+// 				accel_data.x = (int16_t)((buffer[0] << 8) | buffer[1]) >> 2;
+// 				accel_data.y = (int16_t)((buffer[2] << 8) | buffer[3]) >> 2;
+// 				accel_data.z = (int16_t)((buffer[4] << 8) | buffer[5]) >> 2;
+
+// 				magn_data.x = (int16_t)((buffer[6]  << 8) | buffer[7]);
+// 				magn_data.y = (int16_t)((buffer[8]  << 8) | buffer[9]);
+// 				magn_data.z = (int16_t)((buffer[10] << 8) | buffer[11]);
+
+// 				if(readRegs(FXOS8700CQ_STATUS, &status, 1) == I2C_Busy)
+// 					state = STATUS;
+// 				else
+// 					state = NONE;
+// 			}
+// 			else if (transmitState() == I2C_Error)
+// 				state = NONE;
+// 			break;
+
+// 		default:
+// 			state = NONE;
+// 			break;
+// 	}
+// }
+
+static void readData (void)
 {
-	uint8_t status = false, buffer[FXOS8700CQ_READ_LEN];
-	// raw_data_t accel_data, magn_data;
-	// sensor_t* data;
+	static state_t state = IDLE;
+	static uint8_t buffer[FXOS8700CQ_READ_LEN];
 
-	if ((readRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_STATUS, &status, 1) == 1) &&
-		(status &= 0x02)) // Check if data is ready (faster if status is read first)
+	switch (state)
 	{
-		if (status = readRegs(FXOS8700CQ_SLAVE_ADDR, FXOS8700CQ_OUT_X_MSB, buffer, FXOS8700CQ_READ_LEN) == FXOS8700CQ_READ_LEN)
-		{
-			accel_data.x += (int16_t)((buffer[0] << 8) | buffer[1]) >> 2;
-			accel_data.y += (int16_t)((buffer[2] << 8) | buffer[3]) >> 2;
-			accel_data.z += (int16_t)((buffer[4] << 8) | buffer[5]) >> 2;
+		case IDLE:																// Wait for the bus to be free to read data
+			if((transmitState() == I2C_Idle) && (readRegs(FXOS8700CQ_STATUS, buffer, FXOS8700CQ_READ_LEN) == I2C_Busy))
+				state = READING;
+			break;
 
-			magn_data.x += (int16_t)((buffer[6] << 8) | buffer[7]);
-			magn_data.y += (int16_t)((buffer[8] << 8) | buffer[9]);
-			magn_data.z += (int16_t)((buffer[10] << 8) | buffer[11]);
+		case READING:
+			if (transmitState() != I2C_Busy)
+				state = IDLE;
 
-			// accel_data = { (int16_t)(((buffer[0] << 8) | buffer[1])) >> 2,
-			// 			   (int16_t)(((buffer[2] << 8) | buffer[3])) >> 2,
-			// 			   (int16_t)(((buffer[4] << 8) | buffer[5])) >> 2 };
+			if ((transmitState() == I2C_Done) && (buffer[0] &= 0x02))			// Check if data is ready
+			{
+				accel_data.x = (int16_t)((buffer[0] << 8) | buffer[1]) >> 2;
+				accel_data.y = (int16_t)((buffer[2] << 8) | buffer[3]) >> 2;
+				accel_data.z = (int16_t)((buffer[4] << 8) | buffer[5]) >> 2;
 
-			// magn_data = { (int16_t)((buffer[6]	<< 8) | buffer[7]),
-			// 			  (int16_t)((buffer[8]	<< 8) | buffer[9]),
-			// 			  (int16_t)((buffer[10] << 8) | buffer[11]) };
+				magn_data.x = (int16_t)((buffer[6]  << 8) | buffer[7]);
+				magn_data.y = (int16_t)((buffer[8]  << 8) | buffer[9]);
+				magn_data.z = (int16_t)((buffer[10] << 8) | buffer[11]);
+			}
+			break;
 
-			// data = processData(&accel_data, &magn_data);
-			// queuePush(queue, data->roll);
-			// queuePush(queue, data->pitch);
-			// queuePush(queue, data->yaw);
-
-			// queuePush(accel_queue, buffer[1]);
-			// queuePush(accel_queue, buffer[3]);
-			// queuePush(accel_queue, buffer[5]);
-
-			// queuePush(magn_queue, buffer[7]);
-			// queuePush(magn_queue, buffer[9]);
-			// queuePush(magn_queue, buffer[11]);
-		}
+		default:
+			state = IDLE;
+			break;
 	}
 }
 
-// void processData (void)
-// {
-// 	data.roll	= (angle_t) (atan2(accelData->y,	accelData->z)	* 180 / M_PI);
-// 	data.pitch	= (angle_t) (atan2(accelData->x,	accelData->z)	* 180 / M_PI);
-// 	data.yaw	= (angle_t) (atan2(magnData->z,		magnData->x)	* 180 / M_PI);
-// }
+static void processData (void)
+{
+	data.roll	= (angle_t) (atan2(accel_data.y,	accel_data.z)	* 180 / M_PI);
+	data.pitch	= (angle_t) (atan2(accel_data.x,	accel_data.z)	* 180 / M_PI);
+	data.yaw	= (angle_t) (atan2(magn_data.z,		magn_data.x)	* 180 / M_PI);
+}
+
+// Helper Functions ////////////////////////////////////////////////////////////
+
+static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
+{
+	uint8_t buffer[1] = {reg};
+
+	return I2C_InitObject(I2C0_M, data, len, buffer, 1, FXOS8700CQ_SLAVE_ADDR);
+}
+
+static I2C_Status_t writeRegs (uint8_t reg, uint8_t * data, size_t len)
+{
+	uint8_t buffer[len + 1];
+
+	buffer[0] = reg;
+	memcpy(&buffer[1], data, len);
+
+	return I2C_InitObject(I2C0_M, NULL, 0, buffer, len + 1, FXOS8700CQ_SLAVE_ADDR);
+}
+
+static I2C_Status_t transmitState (void)
+{
+	return i2cTransactionState(I2C0_M);
+}
 
 
 /******************************************************************************/

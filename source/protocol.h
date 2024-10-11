@@ -1,41 +1,42 @@
 /***************************************************************************//**
-  @file     stations.h
-  @brief    K64F stations communications handler, using CAN bus
+  @file     protocol.h
+  @brief    Data frame packer and unpacker, using angle protocol 'R+123'
   @author   Group 4: - Oms, Mariano
                      - Solari Raigoso, Agustín
                      - Wickham, Tomás
                      - Vieira, Valentin Ulises
  ******************************************************************************/
 
-#ifndef _STATIONS_H_
-#define _STATIONS_H_
+#ifndef _PROTOCOL_H_
+#define _PROTOCOL_H_
 
 /*******************************************************************************
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
 #include <stdint.h>
-#include <stdbool.h>
+
+#include "sensor.h"
 
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+#define MAX_DIGS		3														// Maximum digits for the angle
+#define PROTOCOL_DIGS	(MAX_DIGS + 2)											// Protocol size: id + sign + val
+
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef enum {
-	STATION_1,
-	STATION_2,
-	STATION_3,
-	STATION_4,
-	STATION_5,
-
-	STATIONS_CANT
-} stations_id_t;
+typedef struct
+{
+	// station_id_t stationId;
+	sensor_axis_t angleId;
+	angle_t angleVal;
+} protocol_t;
 
 
 /*******************************************************************************
@@ -43,51 +44,21 @@ typedef enum {
  ******************************************************************************/
 
 /**
- * @brief Initialize the stations module
+ * @brief Pack data into a message using the protocol
+ * @param data Data to pack
+ * @return Packed message
  */
-void stationsInit(void);
+char* protocolPack (protocol_t* data);
 
 /**
- * @brief Send data to a station
- * @param station Station to send data to
- * @param data Data to send
+ * @brief Unpack a message using the protocol
+ * @param msg Message to unpack
+ * @return Unpacked data
  */
-void stationsSend(stations_id_t station, uint8_t data);
-
-/**
- * @brief Send data to all stations
- * @param data Data to send
- */
-void stationsSendAll(uint8_t data);
-
-/**
- * @brief Receive data from a station
- * @param station Station to receive data from
- * @param data Data received
- */
-void stationsReceive(stations_id_t station, uint8_t data);
-
-/**
- * @brief Receive data from all stations
- * @param data Data received
- */
-void stationsReceiveAll(uint8_t data);
-
-/**
- * @brief Set the callback for a station
- * @param station Station to set the callback for
- * @param callback Callback to set
- */
-void stationsSetCallback(stations_id_t station, void (*callback)(uint8_t));
-
-/**
- * @brief Set the callback for all stations
- * @param callback Callback to set
- */
-void stationsSetCallbackAll(void (*callback)(uint8_t));
+protocol_t* protocolUnpack (char* msg);
 
 
 /*******************************************************************************
  ******************************************************************************/
 
-#endif // _STATIONS_H_
+#endif // _PROTOCOL_H_

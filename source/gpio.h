@@ -46,26 +46,26 @@
 // Manual Write (to measure ISR time)
 
 // Periodic ISR
-#define SETB_ADDRS			(0x400FF084u) // PTB9
-#define SETB_PTR			((uint32_t *)SETB_ADDRS)
-#define SETB_VAL			(1<<9)
+#define P_SET_ADDRS			(0x400FF084u) // PTB9
+#define P_SET_PTR			((uint32_t *)P_SET_ADDRS)
+#define P_SET_VAL			(1<<9)
 
-#define CLRB_ADDRS			(0x400FF088u)
-#define CLRB_PTR			((uint32_t *)CLRB_ADDRS)
-#define CLRB_VAL			(1<<9)
-#define DEBUG_TP_SET		*(SETB_PTR) = SETB_VAL
-#define DEBUG_TP_CLR		*(CLRB_PTR) = CLRB_VAL
+#define P_CLR_ADDRS			(0x400FF088u)
+#define P_CLR_PTR			((uint32_t *)P_CLR_ADDRS)
+#define P_CLR_VAL			(1<<9)
+#define P_DEBUG_TP_SET		*(P_SET_PTR) = P_SET_VAL
+#define P_DEBUG_TP_CLR		*(P_CLR_PTR) = P_CLR_VAL
 
 // Dedicated ISR
-#define SETD_ADDRS			(0x400FF084u) // PTB5
-#define SETD_PTR			((uint32_t *)SETD_ADDRS)
-#define SETD_VAL			(1<<5)
+#define D_SET_ADDRS			(0x400FF084u) // PTB5
+#define D_SET_PTR			((uint32_t *)D_SET_ADDRS)
+#define D_SET_VAL			(1<<5)
 
-#define CLRD_ADDRS			(0x400FF088u)
-#define CLRD_PTR			((uint32_t *)CLRD_ADDRS)
-#define CLRD_VAL			(1<<5)
-#define DEBUG_TP_SET_D		*(SETD_PTR) = SETD_VAL
-#define DEBUG_TP_CLR_D		*(CLRD_PTR) = CLRD_VAL
+#define D_CLR_ADDRS			(0x400FF088u)
+#define D_CLR_PTR			((uint32_t *)D_CLR_ADDRS)
+#define D_CLR_VAL			(1<<5)
+#define D_DEBUG_TP_SET		*(D_SET_PTR) = D_SET_VAL
+#define D_DEBUG_TP_CLR		*(D_CLR_PTR) = D_CLR_VAL
 
 
 /*******************************************************************************

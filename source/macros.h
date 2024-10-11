@@ -50,12 +50,27 @@
 
 #define CAP(x, min, max)	(x = (x < (min) ? (min) : (x > (max) ? (max) : x)))
 
-#define CHAR2ASCII(c)		(c + 48)
-#define ASCII2CHAR(c)		(c - 48)
-
-#define NUM2CHAR(n)			(n + '0')
+#define NUM2ASCII(n)		(n + '0')
+#define ASCII2NUM(c)		(c - '0')
 
 #define FOR(_i, _n)			for (uint8_t i = _i; i < _n; i++)
+
+#define INT8_MAX_DIGS		4
+#define INT16_MAX_DIGS		6
+#define INT32_MAX_DIGS		11
+#define INT64_MAX_DIGS		20
+#define UINT8_MAX_DIGS		3
+#define UINT16_MAX_DIGS		5
+#define UINT32_MAX_DIGS		10
+#define UINT64_MAX_DIGS		20
+#define CHAR_MAX_DIGS		3
+#define SHORT_MAX_DIGS		5
+#define LONG_MAX_DIGS		10
+#define LONGLONG_MAX_DIGS	20
+#define UCHAR_MAX_DIGS		3
+#define USHORT_MAX_DIGS		5
+#define ULONG_MAX_DIGS		10
+#define ULONGLONG_MAX_DIGS	20
 
 
 /*******************************************************************************
