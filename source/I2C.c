@@ -11,6 +11,7 @@
 #include "I2C.h"
 #include "hardware.h"
 #include "gpio.h"
+#include "board.h"
 #include <stdlib.h>
 
 
@@ -59,6 +60,7 @@
 #define I2C_REG_ADDRESS           (I2C_Objects[module].reg_address)
 #define I2C_SEQUENCE_SIZE         (I2C_Objects[module].sequence_size)
 #define I2C_REG_ADDRESS_SENT      (I2C_Objects[module].reg_address_flag)
+#define I2C_REPEATED_START_SENT   (I2C_Objects[module].repeated_start)
 #define I2C_SEQUENCE_ARR          (I2C_Objects[module].sequence_arr)
 
 
@@ -119,7 +121,7 @@ uint8_t dummy;
 
 void I2C_Init(I2C_Module_t module)
 {
-
+  gpioWrite(PIN_TEST_INIT, HIGH);
   // Clock gating
   if(module == I2C0_M)
     SIM->SCGC4 |= SIM_SCGC4_I2C0(HIGH);
@@ -157,19 +159,18 @@ void I2C_Init(I2C_Module_t module)
     // SCL config
     Port_arr[PE]->PCR[I2C0_SCL_PIN] = LOW;            // Clear all bits
     Port_arr[PE]->PCR[I2C0_SCL_PIN] = PORT_PCR_MUX(PORT_mAlt5) | PORT_PCR_ODE(HIGH);
-    Port_arr[PE]->PCR[I2C0_SCL_PIN] = PORT_PCR_IRQC(PORT_eDisabled);
     
     // SDA config
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = LOW;            // Clear all bits
     Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_MUX(PORT_mAlt5) | PORT_PCR_ODE(HIGH);
-    Port_arr[PE]->PCR[I2C0_SDA_PIN] = PORT_PCR_IRQC(PORT_eDisabled);
   }
   // Enable I2C interuptiom
   NVIC_EnableIRQ(I2C_IRQn[module]);
+  gpioWrite(PIN_TEST_INIT, LOW);
 }
 
 
-I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t sequence_size, 
+I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, uint8_t sequence_size, 
                     I2C_Address_t slave_address, I2C_Address_t reg_address, I2C_Mode_t mode)
 {
   if(sequence_arr != NULL && sequence_size)
@@ -180,7 +181,9 @@ I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t se
       I2C_Objects[module].sequence_size = sequence_size;
       I2C_Objects[module].index = 0;
       I2C_Objects[module].reg_address_flag = false;
+      I2C_Objects[module].repeated_start = false;
       I2C_Objects[module].mode = mode;
+      gpioWrite(PIN_TEST_TRANSMIT, HIGH);
     }
 
 
@@ -188,9 +191,18 @@ I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, size_t se
   I2C_START_SIGNAL;
   // 1 es R, 0 es W
   I2C_WRITE_DATA(I2C_ADDRESS_MASK);   // always start in write mode
-  I2C_Objects[module].status = I2C_Busy;
+  
+  I2C_STATUS = I2C_Busy;
+  
+  gpioWrite(PIN_TEST_TRANSMIT, LOW);
 
   return I2C_Objects[module].status;
+}
+
+
+I2C_Status_t I2C_GetStatus(I2C_Module_t module)
+{
+  return I2C_STATUS;
 }
 
 /*******************************************************************************
@@ -231,6 +243,8 @@ BaudRate_t SetBaudRate(uint32_t desiredBaudRate)
 
 void I2C_IRQHandler(I2C_Module_t module)
 {
+  gpioWrite(PIN_TEST_INTERRUPT, HIGH);
+  
   I2C_CLEAR_IRQ_FLAG;
 
   // En modo transmision
@@ -287,17 +301,35 @@ void I2C_IRQHandler(I2C_Module_t module)
         // si ya mande el register address mando el repeated start
         else
         {
-          I2C_SET_RX_MODE;
-          I2C_REPEAT_START_SIGNAL;
-          I2C_WRITE_DATA(I2C_ADDRESS_MASK | 0x00000001); // despues ponerle una macro
-          
-          // Si el tamaño es chico ya mando el NACK
-          if(I2C_SEQUENCE_SIZE == 1)
-            I2C_SET_NACK;
-          
-          // Dummy read
-          dummy = I2C_READ_DATA;
+          // Si no mande el repeated start
+          if(!I2C_REPEATED_START_SENT)
+          {
+            I2C_REPEAT_START_SIGNAL;
+            I2C_WRITE_DATA(I2C_ADDRESS_MASK | 0x00000001); // despues ponerle una macro
+            I2C_REPEATED_START_SENT = true;
+          }
+          else
+          {
+            I2C_SET_RX_MODE;
+
+            // Si el tamaño es chico ya mando el NACK
+            if(I2C_SEQUENCE_SIZE == 1)
+            {
+              I2C_SET_NACK;
+              // gpioWrite(PIN_TEST_INIT, LOW);
+            }
+            else
+              I2C_CLEAR_NACK;
+
+            // Dummy read
+            dummy = I2C_READ_DATA;
+          }
         }
+      }
+      else
+      {
+        I2C_STATUS = I2C_Error;
+        I2C_STOP_SIGNAL;
       }
     }
   }
@@ -308,9 +340,11 @@ void I2C_IRQHandler(I2C_Module_t module)
     // Estoy en el ultimo para leer
     if(I2C_INDEX == I2C_SEQUENCE_SIZE - 1)
     {
-      I2C_STOP_SIGNAL;
+      I2C_SET_TX_MODE;
       I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
+      I2C_STOP_SIGNAL;
       I2C_INDEX++;
+      gpioWrite(PIN_TEST_INTERRUPT, LOW);
       I2C_STATUS = I2C_Done;
     }
     // No estoy en el ultimo para leer
@@ -319,12 +353,17 @@ void I2C_IRQHandler(I2C_Module_t module)
       // Si le resto 2 me da el anteultimo
       if(I2C_INDEX == (I2C_SEQUENCE_SIZE - 2))
       {
-        I2C_SET_NACK;         // Es el NACK, toco TXAK 
+        I2C_SET_NACK;         // Es el NACK, toco TXAK
       }
-      I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
-      I2C_INDEX++;
+      else
+        I2C_CLEAR_NACK;
+      
+        I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
+        I2C_INDEX++;
     }
   }
+  
+  gpioWrite(PIN_TEST_INTERRUPT, LOW);
 }
 
 
