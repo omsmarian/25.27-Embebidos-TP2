@@ -94,7 +94,7 @@ void I2C_End();
 
 void I2C_InitModule (I2C_Module_t module)
 {
-	gpioWrite(I2C_TP_PIN,HIGH);
+//	gpioWrite(I2C_TP_PIN,HIGH);
 	I2C_Type * I2C = I2C_array[module];
 
 	IRQn_Type I2C_IRQ_array[] = I2C_IRQS;
@@ -137,14 +137,14 @@ void I2C_InitModule (I2C_Module_t module)
 
 	//Configuracion de interrupcion
 	NVIC_EnableIRQ(I2C_IRQ);
-	gpioWrite(I2C_TP_PIN,LOW);
+//	gpioWrite(I2C_TP_PIN,LOW);
 
 }
 
 I2C_Status_t I2C_InitObject(I2C_Module_t module, uint8_t * read_buffer, size_t read_size,
 		  uint8_t * write_buffer, size_t write_size, I2C_Address_t slave_address)
 {
-	gpioWrite(I2C_TP_PIN,HIGH);
+//	gpioWrite(I2C_TP_PIN,HIGH);
 	// Set parameters for I2C_Object
 	if ((write_size && write_buffer) || (read_size && read_buffer))
 	{
@@ -169,7 +169,7 @@ I2C_Status_t I2C_InitObject(I2C_Module_t module, uint8_t * read_buffer, size_t r
 	I2C_START_SIGNAL;	// Start Signal (Setting Master Mode)
 	I2C_WRITE_DATA(I2C_ADDRESS_MASK);	// Siempre comienzo en modo write.
 	I2C_OBJ_STATUS=I2C_Busy;
-	gpioWrite(I2C_TP_PIN,LOW);
+//	gpioWrite(I2C_TP_PIN,LOW);
 	return I2C_OBJ_STATUS;
 
 }
@@ -183,7 +183,7 @@ I2C_Status_t I2C_InitObject(I2C_Module_t module, uint8_t * read_buffer, size_t r
 // TODO: ver el tema de las salidas cuando hay error o termina, una función tipo endcom() o parecido si hace falta (creeria que no)
 void I2C_IRQHandler(I2C_Module_t module)
 {
-	gpioWrite(I2C_TP_PIN,HIGH);
+//	gpioWrite(I2C_TP_PIN,HIGH);
 	I2C_CLEAR_IRQ_FLAG;
 	//I2C_STATUS_BYTE = I2C_S_TCF_MASK;
 
@@ -233,7 +233,7 @@ void I2C_IRQHandler(I2C_Module_t module)
 		  // and the communication stops, the instance status is updated
 		  I2C_OBJ_STATUS = I2C_Done;
 		  I2C_STOP_SIGNAL;
-		  FX_I2C_Finished();
+//		  FX_I2C_Finished();
 		}
 	  }
 	  else if (I2C_OBJ_W_INDEX < I2C_OBJ_W_SIZE)
@@ -244,7 +244,7 @@ void I2C_IRQHandler(I2C_Module_t module)
 		  // No recibe acknowledge
 		  I2C_OBJ_STATUS = I2C_Error;
 		  I2C_STOP_SIGNAL;
-		  gpioWrite(LED_RED_PIN,LOW);
+//		  gpioWrite(LED_RED_PIN,LOW);
 		}
 		else
 		{
@@ -266,7 +266,7 @@ void I2C_IRQHandler(I2C_Module_t module)
 		I2C_OBJ_R_BUFFER[I2C_OBJ_R_INDEX] = I2C_READ_DATA;
 		I2C_OBJ_R_INDEX++;
 		I2C_OBJ_STATUS = I2C_Done;
-		FX_I2C_Finished();
+//		FX_I2C_Finished();
 	  }
 	  else if (I2C_OBJ_R_INDEX < (I2C_OBJ_R_SIZE - 1) )
 	  {
@@ -279,7 +279,7 @@ void I2C_IRQHandler(I2C_Module_t module)
 		I2C_OBJ_R_INDEX++;
 	  }
 	}
-	gpioWrite(I2C_TP_PIN,LOW);
+//	gpioWrite(I2C_TP_PIN,LOW);
 }
 
 static BaudRate_t SetBaudRate(uint32_t desiredBaudRate)

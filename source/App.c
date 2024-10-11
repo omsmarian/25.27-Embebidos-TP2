@@ -58,7 +58,7 @@ static sensor_t data;
  * @brief Initialize the application
  * @note This function is called once at the beginning of the main program
  */
-void App_Init (void)
+void App_Init2 (void)
 {
 	serialInit();
 	sensorInit();
@@ -77,7 +77,7 @@ void App_Init (void)
  * @brief Run the application
  * @note This function is called constantly in an infinite loop
  */
-void App_Run (void)
+void App_Run2 (void)
 {
 	sensor_axis_t axis[ALL] = { ROLL, PITCH, YAW };
 	angle_t angles[ALL] = { data.roll, data.pitch, data.yaw };
@@ -85,7 +85,7 @@ void App_Run (void)
 	static bool update[ALL] = { false, false, false };
 	static uint8_t index = 0, index2 = 0;
 	protocol_t angle_data;
-	char* msg, station;
+	uchar_t* msg, station;
 
 	if(timerExpired(timeout_10ms))
 	{
@@ -127,7 +127,8 @@ void App_Run (void)
 						i = ALL;
 					}
 
-					index = index++ % ALL;
+					index++;
+					index %= ALL;
 				}
 			}
 			else
@@ -148,7 +149,8 @@ void App_Run (void)
 						i = ALL;
 					}
 
-					index2 = index2++ % ALL;
+					index2++;
+					index2 %= ALL;
 				}
 			}
 

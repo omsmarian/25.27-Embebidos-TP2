@@ -38,9 +38,6 @@
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static uint8_t xaxis[2];
-static uint8_t yaxis[2];
-
 /*******************************************************************************
  *******************************************************************************
                         GLOBAL FUNCTION DEFINITIONS
@@ -57,16 +54,12 @@ void App_Init (void)
 void App_Run (void)
 {
 	// sensor_t data = readAcceleration();
-	int16_t ax = sensorGetAccelRawData(0);
-	int16_t ay = sensorGetAccelRawData(1);
-	int16_t az = sensorGetAccelRawData(2);
-	int16_t mx = sensorGetMagnRawData(0);
-	int16_t my = sensorGetMagnRawData(1);
-	int16_t mz = sensorGetMagnRawData(2);
+	raw_data_t* accel = sensorGetAccelRawData();
+	raw_data_t* magn = sensorGetMagnRawData();
 
 	// printf("X = %d , Y = %d, Z = %d\n", data.roll, data.pitch, data.yaw);
-	printf("Accel: X = %d , Y = %d, Z = %d\n", ax, ay, az);
-	printf("Magn: X = %d , Y = %d, Z = %d\n", mx, my, mz);
+	printf("Accel: X = %d , Y = %d, Z = %d\n", accel->x, accel->y, accel->z);
+	printf("Magn: X = %d , Y = %d, Z = %d\n", magn->x, magn->y, magn->z);
 }
 
 /*******************************************************************************

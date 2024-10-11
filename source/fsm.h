@@ -15,14 +15,6 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef struct transition_edge fsm_state_t;
-struct transition_edge
-{
-	fsm_event_t event;
-	fsm_state_t * next_state;
-	void (* callback)(void);
-};
-
 typedef enum
 {
 	UART_MSG,
@@ -32,20 +24,28 @@ typedef enum
 	EVENTS_CANT
 } fsm_event_t;
 
-typedef enum
-{
-	INIT,
-	READ_ORIENTATION,
-	TRANSMIT_CAN,
-	RECEIVE_CAN,
-	TRASMIT_UART,
-	CHECK_UPDATE,
-	WAIT,
-	ERROR,
-	END,
+//typedef enum
+//{
+//	INIT,
+//	READ_ORIENTATION,
+//	TRANSMIT_CAN,
+//	RECEIVE_CAN,
+//	TRASMIT_UART,
+//	CHECK_UPDATE,
+//	WAIT,
+//	ERROR,
+//	END,
+//
+//	STATES_CANT
+//} fsm_state_id_t;
 
-	STATES_CANT
-} fsm_state_id_t;
+typedef struct transition_edge fsm_state_t;
+struct transition_edge
+{
+	fsm_event_t event;
+	fsm_state_t * next_state;
+	void (* callback)(void);
+};
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE

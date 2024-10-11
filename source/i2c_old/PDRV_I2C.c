@@ -321,6 +321,6 @@ void i2c_irq_handler(uint32_t channel_number) {
 
 }
 
-void I2C0_IRQHandler(void) {i2c_irq_handler(0);}
-void I2C1_IRQHandler(void) {i2c_irq_handler(1);}
-void I2C2_IRQHandler(void) {i2c_irq_handler(2);}
+//void I2C0_IRQHandler(void) {i2c_irq_handler(0);}
+//void I2C1_IRQHandler(void) {i2c_irq_handler(1);}
+//void I2C2_IRQHandler(void) {i2c_irq_handler(2);}

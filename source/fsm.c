@@ -41,6 +41,8 @@ static void pass (void);
  */
 static void reset (void);
 
+static void updateAngle (void);
+
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -60,7 +62,7 @@ static fsm_state_t END[];
 static fsm_state_t CHECK_UPDATE[] = { {I2C_MSG, READ_ORIENTATION, updateAngle},
 		   							  {TABLE_END, END, reset} };
 
-static fsm_state_t READ_ORIENTATION[] = {TABLE_END,	END, reset};
+static fsm_state_t READ_ORIENTATION[] = { {TABLE_END, END, reset} };
 
 // Add more states here
 

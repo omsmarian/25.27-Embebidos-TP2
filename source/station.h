@@ -86,18 +86,18 @@ void stationReceive (station_id_t station, uint8_t* data);
  */
 void stationReceiveAll (uint8_t* data);
 
-/**
- * @brief Set the callback for a station
- * @param station Station to set the callback for
- * @param callback Callback to set
- */
-void stationSetCallback (station_id_t station, void (*callback)(uint8_t*));
-
-/**
- * @brief Set the callback for all stations
- * @param callback Callback to set
- */
-void stationSetCallbackAll (void (*callback)(uint8_t*));
+///**
+// * @brief Set the callback for a station
+// * @param station Station to set the callback for
+// * @param callback Callback to set
+// */
+//void stationSetCallback (station_id_t station, void (*callback)(uint8_t*));
+//
+///**
+// * @brief Set the callback for all stations
+// * @param callback Callback to set
+// */
+//void stationSetCallbackAll (void (*callback)(uint8_t*));
 
 
 /*******************************************************************************

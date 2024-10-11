@@ -12,9 +12,9 @@
  ******************************************************************************/
 
 #include "board.h"
-#include "can.h"
+//#include "can.h"
 #include "timer.h"
-#include "stations.h"
+#include "station.h"
 
 
 /*******************************************************************************
@@ -35,53 +35,54 @@
 
 void stationInit (void)
 {
-	canInit();		// Initialize CAN
+//	canInit();		// Initialize CAN
 	timerInit();	// Initialize Timer
 }
 
-bool stationStatus (stations_id_t station)
+bool stationStatus (station_id_t station)
 {
-	return canStatus(station);
+//	return canStatus(station);
+	return true;
 }
 
-void stationSend (stations_id_t station, uint8_t* data)
+void stationSend (station_id_t station, uint8_t* data)
 {
-	canSend(station, data);
+//	canSend(station, data);
 }
 
 void stationSendAll (uint8_t* data)
 {
 	for (uint8_t i = 0; i < STATIONS_CANT; i++)
 	{
-		canSend(i, data);
+//		canSend(i, data);
 	}
 }
 
-void stationReceive (stations_id_t station, uint8_t* data)
+void stationReceive (station_id_t station, uint8_t* data)
 {
-	canReceive(station, data);
+//	canReceive(station, data);
 }
 
 void stationReceiveAll (uint8_t* data)
 {
 	for (uint8_t i = 0; i < STATIONS_CANT; i++)
 	{
-		canReceive(i, data);
+//		canReceive(i, data);
 	}
 }
 
-void stationSetCallback (stations_id_t station, can_callback_t callback)
-{
-	canSetCallback(station, callback);
-}
-
-void stationSetCallbacksAll (can_callback_t callback)
-{
-	for (uint8_t i = 0; i < STATIONS_CANT; i++)
-	{
-		canSetCallback(i, callback);
-	}
-}
+//void stationSetCallback (stations_id_t station, can_callback_t callback)
+//{
+////	canSetCallback(station, callback);
+//}
+//
+//void stationSetCallbacksAll (can_callback_t callback)
+//{
+//	for (uint8_t i = 0; i < STATIONS_CANT; i++)
+//	{
+////		canSetCallback(i, callback);
+//	}
+//}
 
 
 /*******************************************************************************

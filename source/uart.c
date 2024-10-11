@@ -36,8 +36,8 @@
 #define UART_HAL_DEFAULT_BAUDRATE		9600
 #define UART_REG(id, reg)				(UART_Ptrs[id]->reg)
 
-#define REG_WRITE(type, x, shift, mask)	(((type)(((type)(x)) << shift)) & mask)
-#define REG_READ(type, x, shift, mask)	(((type)(((type)(x)) & mask) >> shift))
+#define REG_WRITE(type, reg, shift, mask)	(((type)(((type)(reg)) << (shift))) & (mask))
+//#define REG_READ(type, reg, shift, mask)	(((type)(((type)(reg)) & (mask))) >> (shift))
 
 
 /*******************************************************************************
@@ -47,27 +47,33 @@
 void handler (void);
 void update (uart_id_t id);
 void setBaudRate (uart_id_t id, uint32_t br);
+void configFIFO (uart_id_t id, uart_fifo_t fifo);
 
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-static PORT_Type * const	PORT_Ptrs[]		=   PORT_BASE_PTRS;
-static UART_Type * const	UART_Ptrs[]		=   UART_BASE_PTRS;
-static uint32_t				UART_Clks[]		= { SIM_SCGC4_UART0_MASK,
-												SIM_SCGC4_UART1_MASK,
-												SIM_SCGC4_UART2_MASK,
-												SIM_SCGC4_UART3_MASK,
-												SIM_SCGC1_UART4_MASK,
-												SIM_SCGC1_UART5_MASK };
-static uint8_t const        UART_IRQn[]		=   UART_RX_TX_IRQS;
-static pin_t const			UARTx_PINS[]	= { UART0_RX_PIN, UART0_TX_PIN,
-											 	UART1_RX_PIN, UART1_TX_PIN,
-											 	UART2_RX_PIN, UART2_TX_PIN,
-											 	UART3_RX_PIN, UART3_TX_PIN,
-											 	UART4_RX_PIN, UART4_TX_PIN,
-											 	UART5_RX_PIN, UART5_TX_PIN };
+static PORT_Type * const	PORT_Ptrs[]	=   PORT_BASE_PTRS;
+static uint32_t             PORT_Clks[]	= { SIM_SCGC5_PORTA_MASK,
+											SIM_SCGC5_PORTB_MASK,
+											SIM_SCGC5_PORTC_MASK,
+											SIM_SCGC5_PORTD_MASK,
+											SIM_SCGC5_PORTE_MASK };
+static UART_Type * const	UART_Ptrs[]	=   UART_BASE_PTRS;
+static uint32_t				UART_Clks[]	= { SIM_SCGC4_UART0_MASK,
+											SIM_SCGC4_UART1_MASK,
+											SIM_SCGC4_UART2_MASK,
+											SIM_SCGC4_UART3_MASK,
+											SIM_SCGC1_UART4_MASK,
+											SIM_SCGC1_UART5_MASK };
+static uint8_t const        UART_IRQn[]	=   UART_RX_TX_IRQS;
+static pin_t const			UART_PINS[]	= { UART0_RX_PIN, UART0_TX_PIN,
+										 	UART1_RX_PIN, UART1_TX_PIN,
+										 	UART2_RX_PIN, UART2_TX_PIN,
+										 	UART3_RX_PIN, UART3_TX_PIN,
+										 	UART4_RX_PIN, UART4_TX_PIN,
+										 	UART5_RX_PIN, UART5_TX_PIN };
 
 static bool init[UART_CANT_IDS];
 static queue_id_t rx_queue[UART_CANT_IDS];
@@ -88,11 +94,14 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 {
 	if(!init[id])
 	{
-		uint32_t* pinRxPCR = &(PORT_Ptrs[PIN2PORT(UARTx_PINS[id * 2])]->PCR[PIN2NUM(UARTx_PINS[id * 2])]);
-		uint32_t* pinTxPCR = &(PORT_Ptrs[PIN2PORT(UARTx_PINS[id * 2 + 1])]->PCR[PIN2NUM(UARTx_PINS[id * 2 + 1])]);
+		PINData_t pinRx = { PIN2PORT(UART_PINS[id * 2]), PIN2NUM(UART_PINS[id * 2]) };
+		PINData_t pinTx = { PIN2PORT(UART_PINS[id * 2 + 1]), PIN2NUM(UART_PINS[id * 2 + 1]) };
+		uint32_t* pinRxPCR = &(PORT_Ptrs[pinRx.port]->PCR[pinRx.num]);
+		uint32_t* pinTxPCR = &(PORT_Ptrs[pinTx.port]->PCR[pinTx.num]);
 
-		/* Enable the clock for UARTx */
+		/* Enable the clock for UARTx and its PORT */
 		(id < 4) ? (SIM->SCGC4 |= UART_Clks[id]) : (SIM->SCGC1 |= UART_Clks[id]);
+		SIM->SCGC5 |= PORT_Clks[pinRx.port] | PORT_Clks[pinTx.port];
 
 		/* Disable Rx and Tx while settings are changed */
 		UART_REG(id, C2) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK);
@@ -116,7 +125,7 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 		setBaudRate(id, config.baudrate);
 
 		/* Enable FIFO and configure watermarks */
-		configFifo(id, config.fifo);
+		configFIFO(id, config.fifo);
 
 		/* Enable Tx and Rx IRQs for UARTx */
 		NVIC_EnableIRQ(UART_IRQn[id]);
@@ -156,7 +165,7 @@ uint8_t uartGetRxMsgLength (uart_id_t id)
 	return queueSize(rx_queue[id]);
 }
 
-uint8_t uartReadMsg (uart_id_t id, char* msg, uint8_t cant)
+uint8_t uartReadMsg (uart_id_t id, uchar_t* msg, uint8_t cant)
 {
 	uint8_t i = 0;
 	while (i < cant && !queueIsEmpty(rx_queue[id]))
@@ -165,7 +174,7 @@ uint8_t uartReadMsg (uart_id_t id, char* msg, uint8_t cant)
 	return i;
 }
 
-uint8_t uartWriteMsg (uart_id_t id, const char* msg, uint8_t cant)
+uint8_t uartWriteMsg (uart_id_t id, const uchar_t* msg, uint8_t cant)
 {
 	uint8_t i = 0;
 	while (i < cant && !queueIsFull(tx_queue[id]))
@@ -217,7 +226,8 @@ void update (uart_id_t id)
 		queuePush(rx_queue[id], UART_REG(id, D));
 
 	count = UART_REG(id, TCFIFO);
-	while((count++ != REG_READ(uint8_t, UART_REG(id, PFIFO), UART_PFIFO_TXFIFOSIZE_MASK, UART_PFIFO_TXFIFOSIZE_SHIFT))
+//	while((count++ != REG_READ(uint8_t, UART_REG(id, PFIFO), UART_PFIFO_TXFIFOSIZE_MASK, UART_PFIFO_TXFIFOSIZE_SHIFT))
+	while((count++ != ((UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT))
 		&& !queueIsEmpty(tx_queue[id])) UART_REG(id, D) = queuePop(tx_queue[id]);
 
 	// // while(!(UART_REG(id, S1) & UART_SFIFO_RXEMPT_MASK) && !queueIsFull(rx_queue[id]))
@@ -257,7 +267,7 @@ void setBaudRate (uart_id_t id, uint32_t br)
 	UART_REG(id, C4) = (UART_REG(id, C4) & ~UART_C4_BRFA_MASK) | UART_C4_BRFA(brfa);
 }
 
-void configFifo (uart_id_t id, uart_fifo_t fifo)
+void configFIFO (uart_id_t id, uart_fifo_t fifo)
 {
 	UART_REG(id, CFIFO) |= UART_CFIFO_RXFLUSH_MASK | UART_CFIFO_TXFLUSH_MASK;
 	if(fifo == UART_FIFO_RX_ENABLED || fifo == UART_FIFO_RX_TX_ENABLED)

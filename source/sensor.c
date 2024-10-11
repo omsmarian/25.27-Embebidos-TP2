@@ -11,10 +11,12 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-// #include <math.h>
+#include <math.h>
+#include <string.h>
 
 #include "board.h"
 #include "i2c.h"
+// #include "PDRV_I2C.h"
 #include "pisr.h"
 #include "timer.h"
 #include "sensor.h"
@@ -30,7 +32,7 @@
 #define CMP_IN(min, val, max)		(((min) < (val)) && ((val) < (max)))		// In:  (min, max)
 #define CMP_OUT(min, val, max)		(((val) <= (min)) || ((max) <= (val)))		// Out: (-inf, min] U [max, +inf)
 
-#define M_PI						3.14159265358979323846
+//#define M_PI						3.14159265358979323846
 
 
 /*******************************************************************************
@@ -113,7 +115,7 @@ bool sensorInit (void)
 	bool status = true;
 	uint8_t databyte;
 
-	I2C_InitModule(I2C0_M);
+	// I2C_InitModule(0);
 
 	status = (writeRegs(FXOS8700CQ_WHOAMI, &databyte, 1) == 1) &&
 			 (databyte == FXOS8700CQ_WHOAMI_VAL); // Read and check the ID
@@ -276,27 +278,35 @@ static void processData (void)
 
 // Helper Functions ////////////////////////////////////////////////////////////
 
-static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
-{
-	uint8_t buffer[1] = {reg};
+// static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
+// {
+// 	uint8_t buffer[1] = {reg};
 
-	return I2C_InitObject(I2C0_M, data, len, buffer, 1, FXOS8700CQ_SLAVE_ADDR);
-}
+// 	return I2C_InitObject(I2C0_M, data, len, buffer, 1, FXOS8700CQ_SLAVE_ADDR);
+// }
 
-static I2C_Status_t writeRegs (uint8_t reg, uint8_t * data, size_t len)
-{
-	uint8_t buffer[len + 1];
+// static I2C_Status_t writeRegs (uint8_t reg, uint8_t * data, size_t len)
+// {
+// 	uint8_t buffer[len + 1];
 
-	buffer[0] = reg;
-	memcpy(&buffer[1], data, len);
+// 	buffer[0] = reg;
+// 	memcpy(&buffer[1], data, len);
 
-	return I2C_InitObject(I2C0_M, NULL, 0, buffer, len + 1, FXOS8700CQ_SLAVE_ADDR);
-}
+// 	return I2C_InitObject(I2C0_M, NULL, 0, buffer, len + 1, FXOS8700CQ_SLAVE_ADDR);
+// }
 
-static I2C_Status_t transmitState (void)
-{
-	return i2cTransactionState(I2C0_M);
-}
+// static I2C_Status_t transmitState (void)
+// {
+// 	return i2cTransactionState(I2C0_M);
+// }
+
+// static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
+// {
+// 	uint8_t buffer[1] = {reg};
+
+// 	return i2cSendSequence(0, FXOS8700CQ_SLAVE_ADDR, buffer, 1, data, len);
+
+// }
 
 
 /******************************************************************************/

@@ -16,7 +16,6 @@
 #include "sensor.h"
 #include "station.h"
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -25,15 +24,19 @@
 #define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
 
+uchar_t* __Num2Chars__ (uint8_t num);
+uint8_t __Chars2Num__ (uchar_t* chars);
+
 /*******************************************************************************
  *******************************************************************************
 						GLOBAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
 
-unsigned char* protocolPack (protocol_t* data)
+uchar_t* protocolPack (protocol_t* data)
 {
-	unsigned char* msg = __Num2Chars__(data->angleVal);
+	static uchar_t* msg;
+	msg = __Num2Chars__(data->angleVal);
 
 	msg[0] = NUM2ASCII(data->angleId);
 	msg[1] = (data->angleId >= 0) ? '+' : '-';
@@ -41,19 +44,28 @@ unsigned char* protocolPack (protocol_t* data)
 	return msg;
 }
 
-protocol_t* protocolUnpack (char* msg)
+protocol_t* protocolUnpack (uchar_t* msg)
 {
 	static protocol_t protocol;
 
-	protocol.angleId = msg[0] - '0';
-	protocol.angleVal = __Chars2Num__(msg) * ((msg[1] == '+') ? 1 : -1);
+	protocol.angleId	= ASCII2NUM(msg[0]);
+	protocol.angleVal	= __Chars2Num__(msg) * ((msg[1] == '+') ? 1 : -1);
 
 	return &protocol;
 }
 
-unsigned char* __Num2Chars__ (uint8_t num)
+/*******************************************************************************
+ *******************************************************************************
+						LOCAL FUNCTION DEFINITIONS
+ *******************************************************************************
+ ******************************************************************************/
+
+uchar_t* __Num2Chars__ (uint8_t num)
 {
-	unsigned char chars[PROTOCOL_DIGS] = { 0 };
+	static uchar_t chars[PROTOCOL_DIGS];
+
+	for (uint8_t i = 0; i < PROTOCOL_DIGS; i++)
+		chars[i] = NUM2ASCII(0);
 
 	for (uint8_t i = 0; i < MAX_DIGS; i++)
 	{
@@ -64,7 +76,7 @@ unsigned char* __Num2Chars__ (uint8_t num)
 	return chars;
 }
 
-uint8_t __Chars2Num__ (unsigned char* chars)
+uint8_t __Chars2Num__ (uchar_t* chars)
 {
 	uint8_t num = 0;
 
@@ -76,13 +88,5 @@ uint8_t __Chars2Num__ (unsigned char* chars)
 
 	return num;
 }
-
-
-/*******************************************************************************
- *******************************************************************************
-						LOCAL FUNCTION DEFINITIONS
- *******************************************************************************
- ******************************************************************************/
-
 
 /******************************************************************************/
