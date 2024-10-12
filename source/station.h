@@ -17,6 +17,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/*******************************************************************************
+ * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
+ ******************************************************************************/
+
+#define DEVELOPMENT_MODE			1
+#define DEBUG_TP					1											// Debugging Test Points to measure ISR time
+
+#define GN							4											// Group number
+#define STATION_BASE_ID				0x100
+#define STATION_ID					(STATION_BASE_ID + GN)
+
+#define STATIONS_MASK				0b000100000111
+
+// #define STATIONS_CANT				5
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -32,11 +46,12 @@ typedef enum {
 	STATIONS_CANT
 } station_id_t;
 
-typedef enum {
-	SINGLE,
-	PERIODIC
-} station_mode_t;
+// typedef enum {
+// 	SINGLE,
+// 	PERIODIC
+// } station_mode_t;
 
+typedef unsigned char uchar_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -65,26 +80,27 @@ bool stationStatusAll (void);
  * @param station Station to send data to
  * @param data Data to send
  */
-void stationSend (station_id_t station, uint8_t* data);
+void stationSend (station_id_t station, uchar_t* data, uint8_t len);
 
 /**
  * @brief Send data to all stations
  * @param data Data to send
  */
-void stationSendAll (uint8_t* data);
+void stationSendAll (uchar_t* data, uint8_t len);
 
 /**
  * @brief Receive data from a station
  * @param station Station to receive data from
  * @param data Data received
+ * @return ID of the station that sent the data
  */
-void stationReceive (station_id_t station, uint8_t* data);
+station_id_t stationReceive (uchar_t* data);
 
 /**
  * @brief Receive data from all stations
  * @param data Data received
  */
-void stationReceiveAll (uint8_t* data);
+void stationReceiveAll (uchar_t** data);
 
 ///**
 // * @brief Set the callback for a station

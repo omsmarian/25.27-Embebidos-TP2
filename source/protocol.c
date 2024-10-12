@@ -23,9 +23,18 @@
 #define DEVELOPMENT_MODE			1
 #define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
+/*******************************************************************************
+ * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ ******************************************************************************/
 
-uchar_t* __Num2Chars__ (uint8_t num);
-uint8_t __Chars2Num__ (uchar_t* chars);
+uchar_t* __Num2Chars__ (int16_t num);
+int16_t __Chars2Num__ (uchar_t* chars);
+
+/*******************************************************************************
+ * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
+ ******************************************************************************/
+
+const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
 
 /*******************************************************************************
  *******************************************************************************
@@ -38,8 +47,8 @@ uchar_t* protocolPack (protocol_t* data)
 	static uchar_t* msg;
 	msg = __Num2Chars__(data->angleVal);
 
-	msg[0] = NUM2ASCII(data->angleId);
-	msg[1] = (data->angleId >= 0) ? '+' : '-';
+	msg[0] = id2Chars[data->angleId];
+	msg[1] = (data->angleVal >= 0) ? '+' : '-';
 
 	return msg;
 }
@@ -52,7 +61,7 @@ protocol_t* protocolUnpack (uchar_t* msg)
 	protocol.angleVal	= __Chars2Num__(msg) * ((msg[1] == '+') ? 1 : -1);
 
 	return &protocol;
-}
+} // Need to fix this to recieve all formats
 
 /*******************************************************************************
  *******************************************************************************
@@ -60,7 +69,7 @@ protocol_t* protocolUnpack (uchar_t* msg)
  *******************************************************************************
  ******************************************************************************/
 
-uchar_t* __Num2Chars__ (uint8_t num)
+uchar_t* __Num2Chars__ (int16_t num)
 {
 	static uchar_t chars[PROTOCOL_DIGS];
 
@@ -69,21 +78,21 @@ uchar_t* __Num2Chars__ (uint8_t num)
 
 	for (uint8_t i = 0; i < MAX_DIGS; i++)
 	{
-		chars[PROTOCOL_DIGS - 1 - i] = NUM2ASCII(num % 10);
+		chars[PROTOCOL_DIGS - 1 - i] = NUM2ASCII(ABS(num) % 10);
 		num /= 10;
 	}
 
 	return chars;
 }
 
-uint8_t __Chars2Num__ (uchar_t* chars)
+int16_t __Chars2Num__ (uchar_t* chars)
 {
-	uint8_t num = 0;
+	int16_t num = 0;
 
 	for (uint8_t i = 0; i < MAX_DIGS; i++)
 	{
-		num += ASCII2NUM(chars[i + 2]);
 		num *= 10;
+		num += ASCII2NUM(chars[i + 2]);
 	}
 
 	return num;

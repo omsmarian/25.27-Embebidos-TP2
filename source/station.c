@@ -2,9 +2,9 @@
   @file     station.c
   @brief    K64F stations communications handler, using CAN bus
   @author   Group 4: - Oms, Mariano
-                     - Solari Raigoso, Agustín
-                     - Wickham, Tomás
-                     - Vieira, Valentin Ulises
+					 - Solari Raigoso, Agustín
+					 - Wickham, Tomás
+					 - Vieira, Valentin Ulises
  ******************************************************************************/
 
 /*******************************************************************************
@@ -12,10 +12,8 @@
  ******************************************************************************/
 
 #include "board.h"
-//#include "can.h"
-#include "timer.h"
+#include "can.h"
 #include "station.h"
-
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -23,7 +21,6 @@
 
 #define DEVELOPMENT_MODE			1
 #define DEBUG_TP					1											// Debugging Test Points to measure ISR time
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -35,8 +32,22 @@
 
 void stationInit (void)
 {
-//	canInit();		// Initialize CAN
-	timerInit();	// Initialize Timer
+	bool status = false;
+
+	if (CAN_Init())
+	{
+		for(uint8_t i = 0; i < STATIONS_CANT; i++)
+		{
+			CAN_ConfigureRxMB(i, STATION_BASE_ID + i);							// Initialize reception buffers
+			CAN_EnableMbInterrupts(i);											// Enable the interrupt
+		}
+
+		CAN_ConfigureTxMB(STATION_ID);											// Initialize transmission buffer
+
+		status = true;
+	}
+
+	return status;
 }
 
 bool stationStatus (station_id_t station)
@@ -45,45 +56,50 @@ bool stationStatus (station_id_t station)
 	return true;
 }
 
-void stationSend (station_id_t station, uint8_t* data)
+bool stationStatusAll (void)
 {
-//	canSend(station, data);
+//	return canStatusAll();
+	return true;
 }
 
-void stationSendAll (uint8_t* data)
+void stationSendAll (uchar_t* data, uint8_t len)
 {
-	for (uint8_t i = 0; i < STATIONS_CANT; i++)
-	{
-//		canSend(i, data);
-	}
+	CAN_DataFrame frame = { .ID = STATION_ID, .length = len };
+
+	for (uint8_t i = 0; i < FRAME_SIZE; i++)
+		frame.data[i] = 0;														//Clean frame data
+
+	for (uint8_t i = 0; (i < FRAME_SIZE) && (i < len); i++)
+		frame.data[i] = data[i];
+
+	CAN_WriteTxMB(STATION_ID, &frame);											// Send frame
 }
 
-void stationReceive (station_id_t station, uint8_t* data)
+void stationSend (station_id_t station, uchar_t* data, uint8_t len)
 {
-//	canReceive(station, data);
+	// canSend(station, data);
 }
 
-void stationReceiveAll (uint8_t* data)
+station_id_t stationReceive (uchar_t* data)
 {
-	for (uint8_t i = 0; i < STATIONS_CANT; i++)
-	{
-//		canReceive(i, data);
-	}
+    CAN_DataFrame frame = getFromBuffer(&cb);									// Read frame from circular buffer
+	// CAN_DataFrame frame;
+	// CAN_ReadRxMB(STATION_ID, &frame);										// Read frame from reception buffer
+
+    if ((frame.ID != 0) || (frame.length != 0))									// If the frame is empty, the buffer was empty
+		for (uint8_t i = 0; i < frame.length; i++)
+			data[i] = frame.data[i];
+	else
+		frame.ID = STATION_BASE_ID + STATIONS_CANT;
+
+    return frame.ID - STATION_BASE_ID;
 }
 
-//void stationSetCallback (stations_id_t station, can_callback_t callback)
-//{
-////	canSetCallback(station, callback);
-//}
-//
-//void stationSetCallbacksAll (can_callback_t callback)
-//{
-//	for (uint8_t i = 0; i < STATIONS_CANT; i++)
-//	{
-////		canSetCallback(i, callback);
-//	}
-//}
-
+void stationReceiveAll (uchar_t** data)
+{
+	// for (uint8_t i = 0; i < STATIONS_CANT; i++)
+	// 	stationReceive(i, data[i]);
+}
 
 /*******************************************************************************
  *******************************************************************************

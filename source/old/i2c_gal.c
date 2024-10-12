@@ -3,7 +3,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "i2c.h"
+#include "i2c_gal.h"
 // #include "accel.h"
 #include "MK64F12.h"
 #include "board.h"

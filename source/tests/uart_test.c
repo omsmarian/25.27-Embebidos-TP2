@@ -8,7 +8,7 @@
 
 #define __FOREVER__ 	for(;;)
 
-int main2 (void)
+int main3 (void)
 {
  	hw_Init();
 	hw_DisableInterrupts();
@@ -21,12 +21,13 @@ int main2 (void)
 
 	timerInit();
 	ticks_t timeout = timerStart(TIMER_MS2TICKS(10));
+	ticks_t timeout2 = timerStart(TIMER_MS2TICKS(3000));
 
 	hw_EnableInterrupts();
 
 	__FOREVER__
 	{
-		// if(timerExpired(timeout))
+		 if(!timerExpired(timeout2))
 			if(uartIsRxMsg(UART0_ID))
 			{
 				uint8_t length = uartGetRxMsgLength(UART0_ID);

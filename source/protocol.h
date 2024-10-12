@@ -38,6 +38,30 @@ typedef struct
 
 typedef unsigned char uchar_t;
 
+// typedef struct
+// {
+// 	uchar_t id;
+// 	uchar_t sign;
+// 	uchar_t val[MAX_DIGS];
+// } protocol_msg_t;
+
+// typedef struct
+// {
+// 	uchar_t id;
+// 	uchar_t sign;
+// 	int16_t val;
+// } protocol_msg2_t;
+
+// typedef struct
+// {
+// 	sensor_axis_t angleId;
+// 	uchar_t angleIdChar;
+// } angle_id_t;
+
+//const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
+
+// angle_id_t angleIdChars[] = { { ROLL, 'R' }, { PITCH, 'C' }, { YAW, 'O' } };
+
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/

@@ -49,6 +49,7 @@
 #define BITROLL_RIGHT(x, b)	(x = (x >> 1) | ((b & 1) << (CHAR_LENGTH - 1)))
 
 #define CAP(x, min, max)	(x = (x < (min) ? (min) : (x > (max) ? (max) : x)))
+#define ABS(x)				(((x) < 0) ? -(x) : (x))
 
 #define NUM2ASCII(n)		(n + '0')
 #define ASCII2NUM(c)		(c - '0')

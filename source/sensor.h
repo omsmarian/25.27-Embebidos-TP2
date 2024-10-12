@@ -88,7 +88,7 @@
  ******************************************************************************/
 
 typedef uint8_t byte_t;
-typedef uint8_t angle_t;
+typedef int16_t angle_t;
 
 typedef struct
 {
@@ -121,8 +121,16 @@ typedef enum
 /**
  * @brief Initialize the sensor module
  * @return Initialization succeed
+ * @note Interrupts should be disabled when calling this function
  */
 bool sensorInit (void);
+
+/**
+ * @brief Configure the sensor
+ * @return Configuration succeed
+ * @note Interrupts must be enabled when calling this function
+ */
+bool sensorConfig (void);
 
 /**
  * @brief Check if new data was recieved given ANGLE_THRESHOLD

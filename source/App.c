@@ -58,7 +58,7 @@ static sensor_t data;
  * @brief Initialize the application
  * @note This function is called once at the beginning of the main program
  */
-void App_Init2 (void)
+void App_Init (void)
 {
 	serialInit();
 	sensorInit();
@@ -77,7 +77,7 @@ void App_Init2 (void)
  * @brief Run the application
  * @note This function is called constantly in an infinite loop
  */
-void App_Run2 (void)
+void App_Run (void)
 {
 	sensor_axis_t axis[ALL] = { ROLL, PITCH, YAW };
 	angle_t angles[ALL] = { data.roll, data.pitch, data.yaw };
@@ -85,17 +85,10 @@ void App_Run2 (void)
 	static bool update[ALL] = { false, false, false };
 	static uint8_t index = 0, index2 = 0;
 	protocol_t angle_data;
-	uchar_t* msg, station;
+	uchar_t *msg, *station;
 
 	if(timerExpired(timeout_10ms))
 	{
-		// if (timerExpired(timeout_2s))
-		// {
-		// 	// event = getEvent();
-		// 	// state = fsmNextState(state, event);
-		// 	// event = EVENTS_CANT;
-		// 	timeout_2s = timerStart(TIMER_MS2TICKS(2000));
-		// }
 		if (sensorGetStatus(ALL))
 			data = *sensorGetAngleData();
 
@@ -116,13 +109,7 @@ void App_Run2 (void)
 					if (!update[index])
 					{
 						angle_data = (protocol_t){ axis[index], angles[index] };
-						msg = protocolPack(&(angle_data));
-						for (int i = 0; i < STATIONS_CANT; i++)
-						{
-							station = NUM2ASCII(stations[i]);
-							stationSend(stations[i], &station);
-							stationSend(stations[i], msg);
-						}
+						stationSendAll(protocolPack(&angle_data), PROTOCOL_DIGS);
 
 						i = ALL;
 					}
@@ -135,16 +122,10 @@ void App_Run2 (void)
 			{
 				for (uint8_t i = 0; i < ALL; i++)
 				{
-					if (!update[index2])
+					if (update[index2])
 					{
 						angle_data = (protocol_t){ axis[index2], angles[index2] };
-						msg = protocolPack(&(angle_data));
-						for (int i = 0; i < STATIONS_CANT; i++)
-						{
-							station = NUM2ASCII(stations[i]);
-							stationSend(stations[i], &station);
-							stationSend(stations[i], msg);
-						}
+						stationSendAll(protocolPack(&angle_data), PROTOCOL_DIGS);
 
 						i = ALL;
 					}
@@ -154,47 +135,18 @@ void App_Run2 (void)
 				}
 			}
 
-			// for (int i = 0; i < ALL; i++)
-			// {
-			// 	if (sensorGetStatus(axis[i]))
-			// 	{
-			// 		stationSendData(&(angles[i]));
-			// 		serialSendData(processData(&(data.axis[i])));
-			// 	}
-			// }
-			// if (sensorGetStatus(ROLL))
-			// {
-			// 	stationSendData(&(data.roll));
-			// 	serialSendData(processData(&(data.roll)));
-			// }
-			// if (sensorGetStatus(PITCH))
-			// {
-			// 	stationSendData(&(data.pitch));
-			// 	serialSendData(processData(&(data.pitch)));
-			// }
-			// if (sensorGetStatus(YAW))
-			// {
-			// 	stationSendData(&(data.yaw));
-			// 	serialSendData(processData(&(data.yaw)));
-			// }
-
 			timeout_50ms = timerStart(TIMER_MS2TICKS(50));
 		}
 
-		// for (int i = 0; i < STATION_CANT; i++)
-		// {
-		// 	if (stationStatus(stations[i]))
-		// 	{
-		// 		stationReceiveData(&angles[i]);
-		// 		serialSendData(processData(&(angles[i])));
-		// 	}
-		// }
-		// if (stationStatus())
-		// {
-		// 	data = *stationGetData(&data);
-		// 	serialSendData(processData(&data));
-		// 	uartWriteMsg(UART0_ID, &data, sizeof(sensor_t));
-		// }
+		for (int i = 0; i < STATIONS_CANT; i++)
+		{
+			*station = NUM2ASCII(stationReceive(msg));
+			if (*station != STATIONS_CANT)
+			{
+				serialWriteData(station, 1);
+				serialWriteData(protocolPack(protocolUnpack(msg)), PROTOCOL_DIGS);
+			}
+		}
 
 		timeout_10ms = timerStart(TIMER_MS2TICKS(10));
 	}
@@ -206,20 +158,6 @@ void App_Run2 (void)
                         LOCAL FUNCTION DEFINITIONS
  *******************************************************************************
  ******************************************************************************/
-
-// fsm_event_t getEvent (void)
-// {
-// 	fsm_event_t event = EVENTS_CANT;
-
-// 	// if(uartIsRxMsg(UART0_ID))
-// 	// 	event = UART_MSG;
-// 	// else if(i2cmIsRxMsg(I2C0_ID))
-// 	// 	event = I2C_MSG;
-// 	// else if(canIsRxMsg(CAN0_ID))
-// 	// 	event = CAN_MSG;
-
-// 	return event;
-// }
 
 
 /******************************************************************************/

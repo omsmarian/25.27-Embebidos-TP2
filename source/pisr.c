@@ -12,13 +12,11 @@
 #include "hardware.h"
 #include "gpio.h"
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
 #define SYSTICK_LOAD_INIT   ((__CORE_CLOCK__ / PISR_FREQUENCY_HZ) - 1U)
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -30,7 +28,6 @@ typedef struct {
 	uint32_t counter;
 } funData;
 
-
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
@@ -38,7 +35,6 @@ typedef struct {
 static funData funArr[PISR_CANT];
 static bool init_flag;
 static uint32_t count;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -67,7 +63,6 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 	return 0;
 }
 
-
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -85,6 +80,5 @@ __ISR__ SysTick_Handler(void)
 		}
 //	DEBUG_TP_CLR;
 }
-
 
 /******************************************************************************/

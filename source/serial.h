@@ -26,6 +26,8 @@
 #define DEBUG_TP					1											// Debugging test points to measure ISR time
 
 
+typedef unsigned char uchar_t;
+
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
@@ -42,14 +44,17 @@ bool serialInit (void);
  * @param len Number of bytes to be sent
  * @return Data was sent
  */
-bool serialSendData (unsigned char* data, uint8_t len);
+bool serialWriteData (uchar_t* data, uint8_t len);
 
 /**
  * @brief Read data from serial port
  * @param len Number of bytes read
  * @return Data read
  */
-unsigned char* serialReadData (uint8_t* len);
+uchar_t* serialReadData (uint8_t* len);
+
+bool serialWriteStatus (void);
+bool serialReadStatus (void);
 
 
 /*******************************************************************************

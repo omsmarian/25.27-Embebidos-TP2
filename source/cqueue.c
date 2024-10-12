@@ -14,7 +14,6 @@
 
 #include "cqueue.h"
 
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -32,13 +31,11 @@ typedef struct {
 } queue_t;
 // TODO: Use void* for data_t and count_t
 
-
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 static queue_t queues[QUEUES_MAX_CANT];
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -89,6 +86,5 @@ bool	queueIsEmpty	(queue_id_t id) { return !queueSize(id); }
 bool	queueIsFull		(queue_id_t id) { return queueSize(id) == QUEUE_MAX_SIZE; }
 count_t	queueSize		(queue_id_t id) { return (queues[id].rear - queues[id].front + QUEUE_OVERFLOW) % QUEUE_OVERFLOW; }
 void	queueClear		(queue_id_t id) { queues[id].front = queues[id].rear = 0; }
-
 
 /******************************************************************************/

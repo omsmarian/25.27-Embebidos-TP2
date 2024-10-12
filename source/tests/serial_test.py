@@ -21,7 +21,11 @@ while data != b'q':
 	# print("Waiting for data")
 	data = ser.read()															# read serial port
 	if data:
-		print(str(data, encoding='ascii'))
-		ser.write((int.from_bytes(data, 'big') + 1).to_bytes(1, 'big'))			# write data back to the port
+		c = str(data, encoding='ascii')
+		print(c)
+		# ser.write((int.from_bytes(data, 'big') + 1).to_bytes(1, 'big'))			# write data back to the port
+		ser.write(data)															# write data back to the port
+		if c == 'R' or c == 'C' or c == 'O':
+			print("\n")
 
 ser.close()																		# close port

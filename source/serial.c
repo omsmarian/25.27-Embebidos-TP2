@@ -55,23 +55,26 @@ bool serialInit (void)
 	return uartInit(SERIAL_PORT, config);
 }
 
-bool serialSendData (unsigned char* data, uint8_t len)
+bool serialWriteData (uchar_t* data, uint8_t len)
 {
-	bool status = false;
-
-	if(uartIsTxMsgComplete(SERIAL_PORT))
-		status = len == uartWriteMsg(SERIAL_PORT, data, len);
-
-	return status;
+	return len == uartWriteMsg(SERIAL_PORT, data, len);
 }
 
-unsigned char* serialReadData (uint8_t* len)
+uchar_t* serialReadData (uint8_t* len)
 {
-	if(uartIsRxMsg(SERIAL_PORT))
-		*len = uartReadMsg(SERIAL_PORT, data, uartGetRxMsgLength(SERIAL_PORT));
+	*len = uartReadMsg(SERIAL_PORT, data, uartGetRxMsgLength(SERIAL_PORT));
 
 	return data;
 }
 
+bool serialWriteStatus (void)
+{
+	return uartIsTxMsgComplete(SERIAL_PORT);
+}
+
+bool serialReadStatus (void)
+{
+	return uartIsRxMsg(SERIAL_PORT);
+}
 
 /******************************************************************************/

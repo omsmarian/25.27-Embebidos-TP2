@@ -121,7 +121,7 @@ uint8_t dummy;
 
 void I2C_Init(I2C_Module_t module)
 {
-  gpioWrite(PIN_TEST_INIT, HIGH);
+//  gpioWrite(PIN_TEST_INIT, HIGH);
   // Clock gating
   if(module == I2C0_M)
     SIM->SCGC4 |= SIM_SCGC4_I2C0(HIGH);
@@ -166,7 +166,9 @@ void I2C_Init(I2C_Module_t module)
   }
   // Enable I2C interuptiom
   NVIC_EnableIRQ(I2C_IRQn[module]);
-  gpioWrite(PIN_TEST_INIT, LOW);
+
+  I2C_STATUS = I2C_Done;
+//  gpioWrite(PIN_TEST_INIT, LOW);
 }
 
 
@@ -183,7 +185,7 @@ I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, uint8_t s
       I2C_Objects[module].reg_address_flag = false;
       I2C_Objects[module].repeated_start = false;
       I2C_Objects[module].mode = mode;
-      gpioWrite(PIN_TEST_TRANSMIT, HIGH);
+//      gpioWrite(PIN_TEST_TRANSMIT, HIGH);
     }
 
 
@@ -194,7 +196,7 @@ I2C_Status_t I2C_Transmit(I2C_Module_t module, uint8_t * sequence_arr, uint8_t s
   
   I2C_STATUS = I2C_Busy;
   
-  gpioWrite(PIN_TEST_TRANSMIT, LOW);
+//  gpioWrite(PIN_TEST_TRANSMIT, LOW);
 
   return I2C_Objects[module].status;
 }
@@ -243,7 +245,7 @@ BaudRate_t SetBaudRate(uint32_t desiredBaudRate)
 
 void I2C_IRQHandler(I2C_Module_t module)
 {
-  gpioWrite(PIN_TEST_INTERRUPT, HIGH);
+//  gpioWrite(PIN_TEST_INTERRUPT, HIGH);
   
   I2C_CLEAR_IRQ_FLAG;
 
@@ -344,7 +346,7 @@ void I2C_IRQHandler(I2C_Module_t module)
       I2C_SEQUENCE_ARR[I2C_INDEX] = I2C_READ_DATA;
       I2C_STOP_SIGNAL;
       I2C_INDEX++;
-      gpioWrite(PIN_TEST_INTERRUPT, LOW);
+//      gpioWrite(PIN_TEST_INTERRUPT, LOW);
       I2C_STATUS = I2C_Done;
     }
     // No estoy en el ultimo para leer
@@ -363,7 +365,7 @@ void I2C_IRQHandler(I2C_Module_t module)
     }
   }
   
-  gpioWrite(PIN_TEST_INTERRUPT, LOW);
+//  gpioWrite(PIN_TEST_INTERRUPT, LOW);
 }
 
 
