@@ -1,8 +1,11 @@
 from gui import GUI
 import gc
 import serial
+import psutil
 
-ser = serial.Serial(port='COM5',baudrate=9600)
+#ser = serial.Serial(port='COM5',baudrate=9600)
+period_update_cpu = 50
+counter_update_cpu = 0
 
 def classifyData(data, matrix):
     station = data[0]
@@ -57,12 +60,20 @@ class main_:
         self._gui = GUI(*args, **kwargs)
 
     def _update_display(self):
-        value= ser.readline()
-        valueInString=str(value,'UTF-8')
-        if(classifyData(valueInString, self._gui.data_matrix)):
-            print("Invalid data received")
+        #value= ser.readline()
+        #valueInString=str(value,'UTF-8')
+        #if(classifyData(valueInString, self._gui.data_matrix)):
+            #print("Invalid data received")
+        cpu_usage = psutil.cpu_percent()
+        mem_usage = psutil.virtual_memory().percent
         self._gui.render()
         self._gui.update_rotation_values()
+        global counter_update_cpu
+        if counter_update_cpu >= period_update_cpu:
+            counter_update_cpu = 0
+            self._gui.update_cpu_usage(cpu_usage, mem_usage)
+        else:
+            counter_update_cpu += 1
         self._gui.after(1, self._update_display)
 
 if __name__ == '__main__':

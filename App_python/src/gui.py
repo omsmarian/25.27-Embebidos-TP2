@@ -23,6 +23,10 @@ class GUI(tk.Tk):
 	CANVAS_COLOR = 'white'
 	COMMON_X = 0.98	# Many graphical elements share the same relative X position
 	MOVING_STEP = 10
+
+	SEPARATIONX = 0.06
+	SEPARATIONY = 0.08
+	ORIGINY = 0.34
 	
 	POINT_SIZE = 1 
 	POINT_COLOR = '#131313'
@@ -70,6 +74,7 @@ class GUI(tk.Tk):
 		self.__create_color_pickers()
 		self.__create_fill_check()
 		self.__create_station_buttons()
+		self.__create_cpu_usage_monitor()
 
 	def __create_canvas(self):
 		self._canvas_color = tk.StringVar()
@@ -98,18 +103,19 @@ class GUI(tk.Tk):
 		ttk.Button(self, text="Import Model", command=self.__read_file).place(relx=self.COMMON_X, rely=0.92, relheight=0.05, relwidth=0.1, anchor="ne")
 
 	def __create_station_buttons(self):
-		SEPARATIONX = 0.06
-		ORIGINY = 0.34
-		SEPARATIONY = 0.08
 		for i in range(0, 7):
 			ttk.Button(self, text="Station " + str(self.stations[i]), \
-				command=lambda i=i: self.__plotting_station(i)).place(relx=self.COMMON_X-(3*SEPARATIONX), \
-					rely=ORIGINY+(i*SEPARATIONY), relheight=0.05, relwidth=0.095, anchor="ne")
+				command=lambda i=i: self.__plotting_station(i)).place(relx=self.COMMON_X-(3*self.SEPARATIONX), \
+					rely=self.ORIGINY+(i*self.SEPARATIONY), relheight=0.05, relwidth=0.095, anchor="ne")
+			
+	def __create_cpu_usage_monitor(self):
+		self.cpu_usage = ttk.Label(self, text="CPU Usage: 0%")
+		self.cpu_usage.place(relx=self.COMMON_X-(4.5*self.SEPARATIONX), rely=self.ORIGINY-4*(self.SEPARATIONY), relheight=0.04, relwidth=0.27, anchor="nw")
+		self.mem_usage = ttk.Label(self, text="MEM Usage: 0%")
+		self.mem_usage.place(relx=self.COMMON_X-(4.5*self.SEPARATIONX), rely=self.ORIGINY-3*(self.SEPARATIONY), relheight=0.04, relwidth=0.27, anchor="nw")
+
 
 	def __create_rotation_value_boxes(self):
-		SEPARATIONX = 0.06
-		SEPARATIONY = 0.08
-		ORIGINY = 0.34
 		self.x_rot_value = [None, None, None, None, None, None, None]
 		self.y_rot_value = [None, None, None, None, None, None, None]
 		self.z_rot_value = [None, None, None, None, None, None, None]
@@ -119,26 +125,26 @@ class GUI(tk.Tk):
 		#self.x_rot_label.place(relx=self.COMMON_X, rely=0.485, relheight=0.035, relwidth=0.075, anchor="ne")
 
 		R_tag = ttk.Label(self, text="R")
-		R_tag.place(relx=self.COMMON_X, rely=ORIGINY-(SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+		R_tag.place(relx=self.COMMON_X, rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 	
 		C_tag = ttk.Label(self, text="C")
-		C_tag.place(relx=self.COMMON_X-(1*SEPARATIONX), rely=ORIGINY-(SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+		C_tag.place(relx=self.COMMON_X-(1*self.SEPARATIONX), rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 	
 		O_tag = ttk.Label(self, text="O")
-		O_tag.place(relx=self.COMMON_X-(2*SEPARATIONX), rely=ORIGINY-(SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+		O_tag.place(relx=self.COMMON_X-(2*self.SEPARATIONX), rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 		self.P_tag = ttk.Label(self, text=str(PLOTTING_STATION))
-		self.P_tag.place(relx=self.COMMON_X-(3*SEPARATIONX), rely=ORIGINY-(SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+		self.P_tag.place(relx=self.COMMON_X-(3*self.SEPARATIONX), rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 		for i in range(0, 7):
 			self.x_rot_value[i] = ttk.Label(self, text=str(0))
-			self.x_rot_value[i].place(relx=self.COMMON_X-(0*SEPARATIONX), rely=ORIGINY+(i*SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+			self.x_rot_value[i].place(relx=self.COMMON_X-(0*self.SEPARATIONX), rely=self.ORIGINY+(i*self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 			self.y_rot_value[i] = ttk.Label(self, text=str(0))
-			self.y_rot_value[i].place(relx=self.COMMON_X-(1*SEPARATIONX), rely=ORIGINY+(i*SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+			self.y_rot_value[i].place(relx=self.COMMON_X-(1*self.SEPARATIONX), rely=self.ORIGINY+(i*self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 			self.z_rot_value[i] = ttk.Label(self, text=str(0))
-			self.z_rot_value[i].place(relx=self.COMMON_X-(2*SEPARATIONX), rely=ORIGINY+(i*SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
+			self.z_rot_value[i].place(relx=self.COMMON_X-(2*self.SEPARATIONX), rely=self.ORIGINY+(i*self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 			
 
@@ -150,10 +156,19 @@ class GUI(tk.Tk):
 			self.z_rot_value[i].config(text=str(self.data_matrix[i][2])[:5])
 
 		global PLOTTING_STATION
-		self.P_tag.config(text=str(PLOTTING_STATION))
+		self.P_tag.config(text=str(PLOTTING_STATION+1))
 		self.x_rotation_plot = float(self.x_rot_value[PLOTTING_STATION].cget("text"))
 		self.y_rotation_plot = float(self.y_rot_value[PLOTTING_STATION].cget("text"))
 		self.z_rotation_plot = float(self.z_rot_value[PLOTTING_STATION].cget("text"))
+	
+	def update_cpu_usage(self, cpu_usage, mem_usage):
+		bars = 20
+		cpu_percent = cpu_usage/100
+		mem_percent = mem_usage/100
+		cpu_bars = '█' * int(cpu_percent * bars) + '-' * (bars - int(cpu_percent * bars))
+		mem_bars = '█' * int(mem_percent * bars) + '-' * (bars - int(mem_percent * bars))
+		self.cpu_usage.config(text="CPU Usage: "+cpu_bars+str(cpu_usage)[:3]+"%")
+		self.mem_usage.config(text="MEM Usage: "+mem_bars+str(mem_usage)[:3]+"%")
 
 
 	def on_x_rot_slider_change(self, value):
