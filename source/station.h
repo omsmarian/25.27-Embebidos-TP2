@@ -30,13 +30,14 @@
 #define STATIONS_MASK				0b000100000111
 
 #define DATA_MAX_SIZE				8											// Complete according to expected data size
+#define STATION_PERIOD_MS			1											// Station data rate in ms
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 typedef enum {
-	STATION_1,
+	STATION_1 = 0,
 	STATION_2,
 	STATION_3,
 	STATION_4,

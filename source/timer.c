@@ -12,6 +12,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include "debug.h"
 #include "timer.h"
 #include "pisr.h"
 
@@ -21,7 +22,8 @@
 
 #define DEVELOPMENT_MODE		1
 
-#define TIMER_FREQUENCY_HZ		(1000000 / TIMER_TICK_US)
+#define TIMER_FREQUENCY_HZ		(1000000/TIMER_TICK_US)
+#define TIMER_TICKS2MS(ticks)	((ticks)*TIMER_TICK_US/1000)
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -94,13 +96,13 @@ void timerDelay(ticks_t ticks)
     }
 }
 
-ticks_t timerCounter(void)
+uint32_t timerCounter(void)
 {
 	ticks_t diff = timer_main_counter-timer_mark;
-	if (diff > 2)
-		timer_mark = diff; // Dummy action to be able to set a breakpoint
+
 	timer_mark = timer_main_counter;
-	return diff * TIMER_TICK_US;
+
+	return TIMER_TICKS2MS(diff);
 }
 
 /*******************************************************************************
@@ -111,7 +113,13 @@ ticks_t timerCounter(void)
 
 static void timer_isr(void)
 {
+#if DEBUG_TIMER
+P_DEBUG_TP_SET
+#endif
     ++timer_main_counter; // update main counter
+#if DEBUG_TIMER
+P_DEBUG_TP_CLR
+#endif
 }
 
 /******************************************************************************/

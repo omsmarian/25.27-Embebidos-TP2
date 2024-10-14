@@ -12,6 +12,7 @@
 #include "I2C.h"
 #include "hardware.h"
 #include "board.h"
+#include "debug.h"
 #include <stdlib.h>
 
 
@@ -245,8 +246,9 @@ BaudRate_t SetBaudRate(uint32_t desiredBaudRate)
 
 void I2C_IRQHandler(I2C_Module_t module)
 {
-//  gpioWrite(PIN_TEST_INTERRUPT, HIGH);
-  
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
   I2C_CLEAR_IRQ_FLAG;
 
   // En modo transmision
@@ -364,8 +366,9 @@ void I2C_IRQHandler(I2C_Module_t module)
         I2C_INDEX++;
     }
   }
-  
-//  gpioWrite(PIN_TEST_INTERRUPT, LOW);
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 

@@ -18,9 +18,9 @@ def classifyData(data, matrix):
     station = int(station)
     
     angle = data[1]
-    if(angle == 'O'):
+    if(angle == 'C'):
         angle = 2
-    elif(angle == 'H'):
+    elif(angle == 'O'):
         angle = 1
     elif(angle == 'R'):
         angle = 0
@@ -28,25 +28,23 @@ def classifyData(data, matrix):
         return -1
 
     sign = data[2]
-    if(sign != '+' and sign != '-'):
-        return -1
-    
-    value1 = data[3]
-    value2 = data[4]
-    value3 = data[5]
+    if sign != '-':
+        value = data[2:-1]
+    else:
+        value = data[3:-1]
 
-    if(value1 < '0' or value1 > '9' or value2 < '0' or value2 > '9' or value3 < '0' or value3 > '9'):
+    if((data[-1:]=='\00') or (data[-2:]=='\x00')):
         return -1
 
-    value = int(value1)*100 + int(value2)*10 + int(value3)
+    float_value = float(value)
 
-    if(value < 0 or value > 360):
+    if(float_value < 0 or float_value > 360):
         return -1
 
     if(sign == '-'):
-        matrix[station][angle] = -value
+        matrix[station-1][angle] = -float_value
     else:
-        matrix[station][angle] = value
+        matrix[station-1][angle] = float_value
 
 
 class main_:
@@ -64,8 +62,10 @@ class main_:
     def _update_display(self):
         value= ser.readline()
         valueInString=str(value,'UTF-8')
-        if(classifyData(valueInString, self._gui.data_matrix)):
-            print("Invalid data received")
+        classifyData(valueInString, self._gui.data_matrix)
+        #Descomentar para ver los datos que se reciben erroneamente
+        #if(classifyData(valueInString, self._gui.data_matrix)):
+            #print(valueInString)
         cpu_usage = psutil.cpu_percent()
         mem_usage = psutil.virtual_memory().percent
         self._gui.render()

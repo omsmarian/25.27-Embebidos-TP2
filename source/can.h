@@ -24,7 +24,7 @@
 #define TX_BUFFER 8
 
 #define BASE_ID 0x100
-#define MASK_ID 0b11100000000
+#define MASK_ID 0b00000000000
 #define MY_BOARD_ID (BASE_ID + 4)
 
 

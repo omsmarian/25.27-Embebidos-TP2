@@ -124,13 +124,13 @@ class GUI(tk.Tk):
 		#self.x_rot_label = ttk.Label(self, text="X Rotation:")
 		#self.x_rot_label.place(relx=self.COMMON_X, rely=0.485, relheight=0.035, relwidth=0.075, anchor="ne")
 
-		R_tag = ttk.Label(self, text="R")
+		R_tag = ttk.Label(self, text="Roll")
 		R_tag.place(relx=self.COMMON_X, rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 	
-		C_tag = ttk.Label(self, text="C")
+		C_tag = ttk.Label(self, text="Ori.")
 		C_tag.place(relx=self.COMMON_X-(1*self.SEPARATIONX), rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 	
-		O_tag = ttk.Label(self, text="O")
+		O_tag = ttk.Label(self, text="Cab.")
 		O_tag.place(relx=self.COMMON_X-(2*self.SEPARATIONX), rely=self.ORIGINY-(self.SEPARATIONY), relheight=0.04, relwidth=0.05, anchor="ne")
 
 		self.P_tag = ttk.Label(self, text=str(PLOTTING_STATION))
@@ -156,7 +156,7 @@ class GUI(tk.Tk):
 			self.z_rot_value[i].config(text=str(self.data_matrix[i][2])[:5])
 
 		global PLOTTING_STATION
-		self.P_tag.config(text=str(PLOTTING_STATION+1))
+		self.P_tag.config(text=str(PLOTTING_STATION))
 		self.x_rotation_plot = float(self.x_rot_value[PLOTTING_STATION].cget("text"))
 		self.y_rotation_plot = float(self.y_rot_value[PLOTTING_STATION].cget("text"))
 		self.z_rotation_plot = float(self.z_rot_value[PLOTTING_STATION].cget("text"))

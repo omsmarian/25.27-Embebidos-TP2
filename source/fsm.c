@@ -73,17 +73,17 @@ static fsm_state_t READ_ORIENTATION[] = { {TABLE_END, END, reset} };
  *******************************************************************************
  ******************************************************************************/
 
-fsm_state_t * fsm (fsm_state_t * state, fsm_event_t event)
+fsm_state_t* fsm (fsm_state_t* state, fsm_event_t event)
 {
    	while ((state->event != event) && (state->event != TABLE_END))
 		++state;
 	
-	(* state->callback)();
+	(*state->callback)();
 
 	return state->next_state;
 }
 
-fsm_state_t * fsmInit (void)
+fsm_state_t* fsmInit (void)
 {
  	return CHECK_UPDATE;
 }

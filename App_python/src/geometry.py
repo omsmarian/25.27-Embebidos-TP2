@@ -197,23 +197,23 @@ class Geometry:
 		rotation_x = np.array(
 			(
 				(1,               0        ,               0         ),
-				(0, math.cos(self._angle_x), -math.sin(self._angle_x)),
-				(0, math.sin(self._angle_x),  math.cos(self._angle_x))
+				(0, math.cos(self._angle_x*(2*math.pi/360)), -math.sin(self._angle_x*(2*math.pi/360))),
+				(0, math.sin(self._angle_x*(2*math.pi/360)),  math.cos(self._angle_x*(2*math.pi/360)))
 			)
 		)
 
 		rotation_y = np.array(
 			(
-				(math.cos(self._angle_y), 0, -math.sin(self._angle_y)),
+				(math.cos(self._angle_y*(2*math.pi/360)), 0, -math.sin(self._angle_y*(2*math.pi/360))),
 				(            0          , 1,             0           ),
-		        (math.sin(self._angle_y), 0,  math.cos(self._angle_y))
+		        (math.sin(self._angle_y*(2*math.pi/360)), 0,  math.cos(self._angle_y*(2*math.pi/360)))
 			)
 		)
 
 		rotation_z = np.array(
 			(
-				(math.cos(self._angle_z), -math.sin(self._angle_z), 0),
-				(math.sin(self._angle_z),  math.cos(self._angle_z), 0),
+				(math.cos(self._angle_z*(2*math.pi/360)), -math.sin(self._angle_z*(2*math.pi/360)), 0),
+				(math.sin(self._angle_z*(2*math.pi/360)),  math.cos(self._angle_z*(2*math.pi/360)), 0),
 			 	(           0           ,              0          , 1)
 			)
 		)

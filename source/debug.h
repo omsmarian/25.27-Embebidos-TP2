@@ -1,14 +1,20 @@
 /***************************************************************************//**
-  @file     protocol.h
-  @brief    Data frame packer and unpacker, using protocol '{Id}[ValSign]{Val}'
+  @file     debug.h
+  @brief    Debugging test points for the K64F board
   @author   Group 4: - Oms, Mariano
                      - Solari Raigoso, Agustín
                      - Wickham, Tomás
                      - Vieira, Valentin Ulises
  ******************************************************************************/
 
-#ifndef _PROTOCOL_H_
-#define _PROTOCOL_H_
+#ifndef _DEBUG_H_
+#define _DEBUG_H_
+
+/*******************************************************************************
+ * INCLUDE HEADER FILES
+ ******************************************************************************/
+
+#include <stdbool.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -57,6 +63,16 @@ enum {
 };
 
 /*******************************************************************************
+ * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
 
-#endif // _PROTOCOL_H_
+/**
+ * @brief Initialize the debug module
+ * @return true if the initialization was successful
+ */
+void debugInit (void);
+
+/*******************************************************************************
+ ******************************************************************************/
+
+#endif // _DEBUG_H_

@@ -41,6 +41,7 @@ typedef struct {
  ******************************************************************************/
 
 static queue_t queues[QUEUES_MAX_CANT];
+static queue_id_t ids = 0;
 
 /*******************************************************************************
  *******************************************************************************
@@ -50,14 +51,12 @@ static queue_t queues[QUEUES_MAX_CANT];
 
 queue_id_t queueInit (void)
 {
-	static queue_id_t id = 0;
-
-	if (id < QUEUES_MAX_CANT)
-		queueClear(id);
+	if (ids < QUEUES_MAX_CANT)
+		queueClear(ids);
 	else
-		id = QUEUES_MAX_CANT;
+		ids = QUEUES_MAX_CANT;
 
-	return id++;
+	return ids++;
 }
 
 count_t queuePush (queue_id_t id, data_t data) // Enqueue
@@ -70,7 +69,6 @@ count_t queuePush (queue_id_t id, data_t data) // Enqueue
 		queues[id].rear++;
 		if (queues[id].rear >= QUEUE_OVERFLOW)
 			queues[id].rear -= QUEUE_OVERFLOW;
-//		queues[id].rear = (queues[id].rear + 1) % (QUEUE_OVERFLOW);
 	}
 
 	return count + 1;
@@ -82,7 +80,6 @@ data_t queuePop (queue_id_t id) // Dequeue
 
 	if (!queueIsEmpty(id))
 	{
-//		queues[id].front = (queues[id].front + 1) % (QUEUE_OVERFLOW);
 		queues[id].front++;
 		if (queues[id].front >= QUEUE_OVERFLOW)
 			queues[id].front -= QUEUE_OVERFLOW;
@@ -93,20 +90,19 @@ data_t queuePop (queue_id_t id) // Dequeue
 	return data;
 }
 
-data_t	queueFront		(queue_id_t id) { return !queueIsEmpty(id) ? queues[id].items[queues[id].front] : QUEUE_UNDERFLOW; }
-data_t	queueBack		(queue_id_t id) { return !queueIsEmpty(id) ? queues[id].items[queues[id].rear - 1] : QUEUE_UNDERFLOW; }
-bool	queueIsEmpty	(queue_id_t id) { return !queueSize(id); }
-bool	queueIsFull		(queue_id_t id) { return queueSize(id) == QUEUE_MAX_SIZE; }
-//count_t	queueSize		(queue_id_t id) { return (queues[id].rear - queues[id].front + QUEUE_OVERFLOW) % QUEUE_OVERFLOW; }
-count_t	queueSize		(queue_id_t id)
+count_t	queueSize (queue_id_t id)
 {
-	count_t size = queues[id].rear - queues[id].front + QUEUE_OVERFLOW;
+	count_t size = (QUEUE_OVERFLOW + queues[id].rear) - queues[id].front;
 	if (size >= QUEUE_OVERFLOW)
 		size -= QUEUE_OVERFLOW;
 
 	return size;
-//	return (queues[id].rear - queues[id].front + QUEUE_OVERFLOW) % QUEUE_OVERFLOW;
 }
+
+data_t	queueFront		(queue_id_t id) { return !queueIsEmpty(id) ? queues[id].items[queues[id].front] : QUEUE_UNDERFLOW; }
+data_t	queueBack		(queue_id_t id) { return !queueIsEmpty(id) ? queues[id].items[queues[id].rear - 1] : QUEUE_UNDERFLOW; }
+bool	queueIsEmpty	(queue_id_t id) { return !queueSize(id); }
+bool	queueIsFull		(queue_id_t id) { return queueSize(id) == QUEUE_MAX_SIZE; }
 void	queueClear		(queue_id_t id) { queues[id].front = queues[id].rear = 0; }
 
 /******************************************************************************/

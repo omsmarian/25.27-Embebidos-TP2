@@ -12,11 +12,15 @@
  ******************************************************************************/
 
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "board.h"
+#include "debug.h"
 #include "gpio.h"
 #include "hardware.h"
-#include "MK64F12.h"
-#include "board.h"
 #include "macros.h"
+#include "MK64F12.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE

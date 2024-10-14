@@ -12,14 +12,11 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include <gpio.h>
-#include "hardware.h"
-// #include "MK64F12.h"
-
 #include "board.h"
 #include "cqueue.h"
+#include "debug.h"
+#include "hardware.h"
 #include "pisr.h"
-#include "timer.h"
 #include "uart.h"
 
 /*******************************************************************************
@@ -41,9 +38,29 @@
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
+/**
+ * @brief UARTx ISR Handler (IRQ and Periodic)
+ */
 void handler (void);
+
+/**
+ * @brief Update the queues with the received data
+ * @param id UART ID
+ */
 void update (uart_id_t id);
+
+/**
+ * @brief Set the baudrate for UARTx
+ * @param id UART ID
+ * @param br Baudrate
+ */
 void setBaudRate (uart_id_t id, uint32_t br);
+
+/**
+ * @brief Configure the FIFO for UARTx
+ * @param id UART ID
+ * @param fifo FIFO configuration
+ */
 void configFIFO (uart_id_t id, uart_fifo_t fifo);
 
 /*******************************************************************************
@@ -74,9 +91,6 @@ static pin_t const			UART_PINS[]	= { UART0_RX_PIN, UART0_TX_PIN,
 static bool init[UART_CANT_IDS];
 static queue_id_t rx_queue[UART_CANT_IDS];
 static queue_id_t tx_queue[UART_CANT_IDS];
-
-// static tim_id_t uart_timers[UART_CANT_IDS];
-
 static uart_id_t irq = UART_CANT_IDS;
 
 /*******************************************************************************
@@ -127,20 +141,17 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 
 		/* Enable UARTx Rx and Tx (and interrupts) */
 		if(config.RxTx != UART_RX_ENABLED)
-			UART_REG(id, C2) |= (UART_C2_TE_MASK); // | UART_C2_TIE_MASK);
+			UART_REG(id, C2) |= (UART_C2_TE_MASK | (UART_C2_TIE_MASK & (config.isr == UART_ISR_IRQ)));
 		if(config.RxTx != UART_TX_ENABLED)
-			UART_REG(id, C2) |= (UART_C2_RE_MASK); // | UART_C2_RIE_MASK);
+			UART_REG(id, C2) |= (UART_C2_RE_MASK | (UART_C2_RIE_MASK & (config.isr == UART_ISR_IRQ)));
 
 		/* Create queues for UARTx */
 		rx_queue[id] = queueInit();
 		tx_queue[id] = queueInit();
 
 		/* Register PISR to update the queues */
-		pisrRegister(handler, PISR_FREQUENCY_HZ / UART_FREQUENCY_HZ);
-
-		/* Set up a timer to update the queues */
-		// timerInit();
-		// timerStart(timerGetId(), TIMER_MS2TICKS(1), TIMER_MODE_PERIODIC, handler);
+		if(config.isr == UART_ISR_PERIODIC)
+			pisrRegister(handler, PISR_FREQUENCY_HZ / UART_FREQUENCY_HZ);
 
 		init[id] = true;
 	}
@@ -183,6 +194,42 @@ uint8_t uartIsTxMsgComplete (uart_id_t id)
 	return queueIsEmpty(tx_queue[id]);
 }
 
+// bool uartDeinit (uart_id_t id)
+// {
+// 	PINData_t pinRx = { PIN2PORT(UART_PINS[id * 2]), PIN2NUM(UART_PINS[id * 2]) };
+// 	PINData_t pinTx = { PIN2PORT(UART_PINS[id * 2 + 1]), PIN2NUM(UART_PINS[id * 2 + 1]) };
+// 	uint32_t* pinRxPCR = &(PORT_Ptrs[pinRx.port]->PCR[pinRx.num]);
+// 	uint32_t* pinTxPCR = &(PORT_Ptrs[pinTx.port]->PCR[pinTx.num]);
+
+// 	if(init[id])
+// 	{
+// 		/* Disable Tx and Rx while settings are changed */
+// 		UART_REG(id, C2) &= ~(UART_C2_TE_MASK | UART_C2_RE_MASK);
+
+// 		/* Disable FIFO */
+// 		configFIFO(id, UART_FIFO_DISABLED);
+
+// 		/* Disable UARTx Rx and Tx */
+// 		NVIC_DisableIRQ(UART_IRQn[id]);
+
+// 		/* Clear UARTx Rx and Tx pins */
+// 		*pinRxPCR = 0x0;
+// 		*pinTxPCR = 0x0;
+
+// 		/* Disable the clock for UARTx and its PORT */
+// 		(id < 4) ? (SIM->SCGC4 &= ~UART_Clks[id]) : (SIM->SCGC1 &= ~UART_Clks[id]);
+// 		SIM->SCGC5 &= ~(PORT_Clks[pinRx.port] | PORT_Clks[pinTx.port]);
+
+// 		/* Clear queues for UARTx */
+// 		queueClear(rx_queue[id]);
+// 		queueClear(tx_queue[id]);
+
+// 		init[id] = false;
+// 	}
+
+// 	return !init[id];
+// }
+
 /*******************************************************************************
  *******************************************************************************
 						LOCAL FUNCTION DEFINITIONS
@@ -200,7 +247,7 @@ __ISR__ UART5_RX_TX_IRQHandler (void) {	irq = UART5_ID; handler(); }
 
 void handler (void)																// Separate so that it can be called from the PISR/timer as well
 {
-#if DEBUG_SENSOR
+#if DEBUG_UART
 P_DEBUG_TP_SET
 #endif
 	if(irq != UART_CANT_IDS)
@@ -212,7 +259,7 @@ P_DEBUG_TP_SET
 		for(uint8_t id = 0; id < UART_CANT_IDS; id++)
 			if(init[id])
 				update(id);
-#if DEBUG_SENSOR
+#if DEBUG_UART
 P_DEBUG_TP_CLR
 #endif
 }

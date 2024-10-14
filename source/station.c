@@ -35,7 +35,7 @@ bool stationInit (void)
 
 	if (CAN_Init() == CAN_SUCCESS)
 	{
-		for(uint8_t i = 0; i < STATIONS_CANT; i++)
+		for(uint8_t i = 0; i <= STATIONS_CANT; i++)
 		{
 			CAN_ConfigureRxMB(i,BASE_ID+i);
 			CAN_SetRxIndividualMask( i, MASK_ID);
