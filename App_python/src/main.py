@@ -3,7 +3,9 @@ import gc
 import serial
 import psutil
 
-#ser = serial.Serial(port='COM5',baudrate=9600)
+
+#Bus 001 Device 110: ID 1357:0089 P&E Microcomputer Systems OpenSDA - CDC Serial Port
+ser = serial.Serial(port='/dev/ttyACM0', baudrate=9600)
 period_update_cpu = 50
 counter_update_cpu = 0
 
@@ -60,10 +62,10 @@ class main_:
         self._gui = GUI(*args, **kwargs)
 
     def _update_display(self):
-        #value= ser.readline()
-        #valueInString=str(value,'UTF-8')
-        #if(classifyData(valueInString, self._gui.data_matrix)):
-            #print("Invalid data received")
+        value= ser.readline()
+        valueInString=str(value,'UTF-8')
+        if(classifyData(valueInString, self._gui.data_matrix)):
+            print("Invalid data received")
         cpu_usage = psutil.cpu_percent()
         mem_usage = psutil.virtual_memory().percent
         self._gui.render()

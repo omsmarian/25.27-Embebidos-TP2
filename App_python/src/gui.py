@@ -5,7 +5,7 @@ from timer import time_me
 import math
 import tkinter as tk
 from tkinter import ttk, filedialog, colorchooser, messagebox
-import pyscreenshot as ImageGrab
+# import pyscreenshot as ImageGrab
 
 import sv_ttk
 import os
@@ -39,7 +39,7 @@ class GUI(tk.Tk):
 
 		icon_path = REL_PATH+"icon.bmp" 
 		icon_ico = REL_PATH+"icon.ico"
-		self.iconbitmap(bitmap=icon_path, default=icon_ico)
+		# self.iconbitmap(bitmap=icon_path, default=icon_ico)
 		
 		self._file_exists = False # A flag for whether the file has been loaded or not
 		self._changed = True # A flag used to only redraw the object when a change occured

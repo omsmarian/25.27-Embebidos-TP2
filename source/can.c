@@ -207,6 +207,10 @@ CAN_Status  CAN_WriteTxMB(uint8_t index, CAN_DataFrame * frame)
 		/// Write the ID word.
 		CAN0->MB[index].ID = CAN_ID_STD(frame->ID);
 
+		//Cleanr the data bytes
+		CAN0->MB[index].WORD0 = 0;
+		CAN0->MB[index].WORD1 = 0;
+
 		/// Write the data bytes in order using macros.
 		CAN0->MB[index].WORD0 = CAN_WORD0_DATA_BYTE_0(frame->dataByte0) |
 		                    	CAN_WORD0_DATA_BYTE_1(frame->dataByte1) |

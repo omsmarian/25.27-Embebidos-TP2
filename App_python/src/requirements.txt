@@ -1,0 +1,6 @@
+numpy
+pyscreenshot==3.0
+numba
+sv-ttk==2.4
+pyserial
+psutil
