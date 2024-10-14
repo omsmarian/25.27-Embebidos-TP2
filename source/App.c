@@ -71,7 +71,7 @@ void App_Init (void)
 {
 	serialInit();
 	sensorInit();
-//	stationInit();
+	stationInit();
 
 	timerInit();
 	timeout_1ms		= timerStart(TIMER_MS2TICKS(1));

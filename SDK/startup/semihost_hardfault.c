@@ -4,10 +4,29 @@
 //                  to hang application when debugger not connected.
 //
 // ****************************************************************************
-// Copyright 2017-2024 NXP
+// Copyright(C) NXP Semiconductors, 2017-2018
 // All rights reserved.
 //
-// SPDX-License-Identifier: BSD-3-Clause
+// Software that is described herein is for illustrative purposes only
+// which provides customers with programming information regarding the
+// NXP Cortex-M based MCUs. This software is supplied "AS IS" without any
+// warranties of any kind, and NXP Semiconductors and its licensor disclaim any
+// and all warranties, express or implied, including all implied warranties of
+// merchantability, fitness for a particular purpose and non-infringement of
+// intellectual property rights.  NXP Semiconductors assumes no responsibility
+// or liability for the use of the software, conveys no license or rights under
+// any patent, copyright, mask work right, or any other intellectual property
+// rights in or to any products. NXP Semiconductors reserves the right to make
+// changes in the software without notification. NXP Semiconductors also makes
+// no representation or warranty that such application will be suitable for the
+// specified use without further testing or modification.
+//
+// Permission to use, copy, modify, and distribute this software and its
+// documentation is hereby granted, under NXP Semiconductors' and its
+// licensor's relevant copyrights in the software, without fee, provided that it
+// is used in conjunction with NXP Semiconductors microcontrollers.  This
+// copyright, permission, and disclaimer notice must appear in all copies of
+// this code.
 // ****************************************************************************
 //
 //                       ===== DESCRIPTION =====
@@ -52,45 +71,37 @@ __attribute__((naked))
 void HardFault_Handler(void){
     __asm(  ".syntax unified\n"
         // Check which stack is in use
-            "MOVS   R0, #4           \n"
-            "MOV    R1, LR           \n"
-            "TST    R0, R1           \n"
-            "BEQ    _MSP             \n"
-            "MRS    R0, PSP          \n"
-            "B  _process             \n"
-            "_MSP:                   \n"
-            "MRS    R0, MSP          \n"
+            "MOVS   R0, #4  \n"
+            "MOV    R1, LR  \n"
+            "TST    R0, R1  \n"
+            "BEQ    _MSP    \n"
+            "MRS    R0, PSP \n"
+            "B  _process      \n"
+            "_MSP:  \n"
+            "MRS    R0, MSP \n"
         // Load the instruction that triggered hard fault
-        "_process:                   \n"
-            "LDR    R1,[R0,#24]      \n"
-            "LDRH   R2,[r1]          \n"
+        "_process:     \n"
+            "LDR    R1,[R0,#24] \n"
+            "LDRH    R2,[r1] \n"
         // Semihosting instruction is "BKPT 0xAB" (0xBEAB)
-            "LDR    R3,=0xBEAB       \n"
-            "CMP    R2,R3            \n"
+            "LDR    R3,=0xBEAB \n"
+            "CMP     R2,R3 \n"
             "BEQ    _semihost_return \n"
         // Wasn't semihosting instruction so enter infinite loop
-            "B .                     \n"
+            "B . \n"
         // Was semihosting instruction, so adjust location to
         // return to by 1 instruction (2 bytes), then exit function
-            "_semihost_return:       \n"
-            "ADDS   R1,#2            \n"
-            "STR    R1,[R0,#24]      \n"
-        // Set a return value from semihosting operation.
-        // 0 is slightly arbitrary, but appears to allow most
-        // C Library IO functions sitting on top of semihosting to
-        // continue to operate to some degree
-        // Return a positive value (32) for SYS_OPEN only
-            "LDR    R1,[ R0,#0 ]     \n"  // R0 is at location 0 on stack
-            "CMP    R1, #1           \n"  // 0x01=SYS_OPEN
-            "BEQ    _non_zero_ret    \n"
-            "MOVS   R1,#0            \n"
-            "B      _sys_ret         \n"
-            "_non_zero_ret:          \n"
-            "MOVS   R1,#32           \n"
-            "_sys_ret:               \n"
-            "STR    R1,[ R0,#0 ]     \n" // R0 is at location 0 on stack
-        // Return from hard fault handler to application
-            "BX     LR               \n"
+        "_semihost_return: \n"
+            "ADDS    R1,#2 \n"
+            "STR    R1,[R0,#24] \n"
+    	// Set a return value from semihosting operation.
+    	// 32 is slightly arbitrary, but appears to allow most
+    	// C Library IO functions sitting on top of semihosting to
+    	// continue to operate to some degree
+    		    "MOVS   R1,#32 \n"
+    		    "STR R1,[ R0,#0 ] \n" // R0 is at location 0 on stack
+    	// Return from hard fault handler to application
+            "BX LR \n"
         ".syntax divided\n") ;
 }
 
