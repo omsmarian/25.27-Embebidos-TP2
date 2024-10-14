@@ -33,15 +33,14 @@ bool stationInit (void)
 {
 	bool status = false;
 
-	if (CAN_Init())
+	if (CAN_Init() == CAN_SUCCESS)
 	{
 		for(uint8_t i = 0; i < STATIONS_CANT; i++)
 		{
-			CAN_ConfigureRxMB(i, STATION_BASE_ID + i);							// Initialize reception buffers
-			CAN_EnableMbInterrupts(i);											// Enable the interrupt
+			CAN_ConfigureRxMB(i,BASE_ID+i);
+			CAN_SetRxIndividualMask( i, MASK_ID);
+			CAN_EnableMbInterrupts(i);									// Enable the interrupt
 		}
-
-		CAN_ConfigureTxMB(GN);													// Initialize transmission buffer
 
 		status = true;
 	}
@@ -59,19 +58,18 @@ void stationSend (station_t* station)
 	for (uint8_t i = 0; (i < FRAME_SIZE) && (i < frame.length); i++)
 		frame.data[i] = station->data[i];
 
-	CAN_WriteTxMB(GN, &frame);													// Send frame
+	CAN_WriteTxMB(TX_BUFFER, &frame);													// Send frame
 }
 
 void stationReceive (station_t* station)
 {
     CAN_DataFrame frame = getFromBuffer(&cb);									// Read frame from circular buffer
-	// CAN_DataFrame frame;
-	// CAN_ReadRxMB(STATION_ID, &frame);										// Read frame from reception buffer
 
     if ((frame.ID != 0) || (frame.length != 0))									// If the frame is empty, the buffer was empty
     {
     	for (uint8_t i = 0; (i < station->len) && (i < frame.length); i++)
 			station->data[i] = frame.data[i];
+
 		station->len = frame.length;
 		station->id = frame.ID - STATION_BASE_ID;
     }
