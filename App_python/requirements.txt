@@ -3,3 +3,4 @@ pyscreenshot==3.0
 numba==0.56.4
 sv-ttk==2.4
 pyserial
+psutil
