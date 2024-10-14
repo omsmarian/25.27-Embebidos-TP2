@@ -14,21 +14,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PISR_FREQUENCY_HZ	10000U
+#define PISR_FREQUENCY_HZ	2000U
 #define PISR_CANT			8
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
 typedef void (*pisr_callback_t) (void);
-
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -41,7 +38,6 @@ typedef void (*pisr_callback_t) (void);
  * @return Registration succeed
  */
 bool pisrRegister (pisr_callback_t fun, unsigned int period);
-
 
 /*******************************************************************************
  ******************************************************************************/

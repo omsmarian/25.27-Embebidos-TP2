@@ -15,8 +15,7 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
-#include "gpio.h"
-
+#include <gpio.h>
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
@@ -57,7 +56,6 @@
 #define FXOS8700CQ_I2C_SDA_PIN	PORTNUM2PIN(PE, 25)	// PTB1
 #define FXOS8700CQ_INT1_PIN		PORTNUM2PIN(PC, 6)	// PTC6
 #define FXOS8700CQ_INT2_PIN		PORTNUM2PIN(PC, 13)	// PTC6
-
 
 /*******************************************************************************
  ******************************************************************************/

@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -82,7 +81,6 @@
 #define ANGLE_THRESHOLD			5												// Threshold for angle change detection in degrees
 #define SENSOR_FREQUENCY_HZ		200												// Sensor data rate in Hz
 
-
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
@@ -90,22 +88,19 @@
 typedef uint8_t byte_t;
 typedef int16_t angle_t;
 
-typedef struct
-{
+typedef struct {
 	angle_t roll;
 	angle_t pitch;
 	angle_t yaw;
 } sensor_t;
 
-typedef struct
-{
+typedef struct {
 	int16_t x;
 	int16_t y;
 	int16_t z;
 } raw_data_t;
 
-typedef enum
-{
+typedef enum {
 	ROLL,
 	PITCH,
 	YAW,
@@ -113,6 +108,11 @@ typedef enum
 	ALL
 } sensor_axis_t;
 
+typedef struct {
+	bool roll;
+	bool pitch;
+	bool yaw;
+} sensor_status_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -133,11 +133,10 @@ bool sensorInit (void);
 bool sensorConfig (void);
 
 /**
- * @brief Check if new data was recieved given ANGLE_THRESHOLD
- * @param axis Sensor axis to check
- * @return true if new sensor data is available
-*/
-bool sensorGetStatus (sensor_axis_t axis);
+ * @brief Check if new data is available
+ * @return true if any angle has exceeded ANGLE_THRESHOLD
+ */
+sensor_status_t* sensorGetStatus (void);
 
 /**
  * @brief Get raw data from the accelerometer
@@ -156,7 +155,6 @@ raw_data_t* sensorGetMagnRawData (void);
  * @return Absolute angles in degrees
  */
 sensor_t* sensorGetAngleData (void);
-
 
 /*******************************************************************************
  ******************************************************************************/

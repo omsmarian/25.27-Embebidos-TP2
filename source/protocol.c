@@ -11,6 +11,8 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <stdio.h>
+
 #include "macros.h"
 #include "protocol.h"
 #include "sensor.h"
@@ -21,20 +23,26 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE			1
-#define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
-uchar_t* __Num2Chars__ (int16_t num);
-int16_t __Chars2Num__ (uchar_t* chars);
+/**
+ * @brief Convert a number to a string (no terminator)
+ * @param num Number to convert
+ * @param chars String to store the number
+ * @return Number of digits in the number (string length)
+ */
+uint8_t __Num2Chars__ (const uint16_t num, uchar_t* chars);
 
-/*******************************************************************************
- * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
+/**
+ * @brief Convert a string (no terminator) to a number
+ * @param chars String to convert
+ * @param len Length of the string (number of digits)
+ * @return Number converted
+ */
+int16_t __Chars2Num__ (uchar_t* const chars, const int8_t len);
 
 /*******************************************************************************
  *******************************************************************************
@@ -42,26 +50,42 @@ const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (C
  *******************************************************************************
  ******************************************************************************/
 
-uchar_t* protocolPack (protocol_t* data)
+uint8_t protocolPack (protocol_t* const data, uchar_t chars[PROTOCOL_DIGS])
 {
-	static uchar_t* msg;
-	msg = __Num2Chars__(data->angleVal);
+	uint8_t len, index = 1;
 
-	msg[0] = id2Chars[data->angleId];
-	msg[1] = (data->angleVal >= 0) ? '+' : '-';
+	chars[0] = data->id;
 
-	return msg;
+	if (data->val < 0)
+	{
+		chars[1] = '-';
+		index = 2;
+	}
+
+	len = __Num2Chars__(ABS(data->val), chars + index);
+	if(!len) { index = 0; }
+
+	return len + index;
 }
 
-protocol_t* protocolUnpack (uchar_t* msg)
+protocol_t* protocolUnpack (uchar_t* const msg, const uint8_t len)
 {
-	static protocol_t protocol;
+	static protocol_t data;
+	uint8_t index = 1;
 
-	protocol.angleId	= ASCII2NUM(msg[0]);
-	protocol.angleVal	= __Chars2Num__(msg) * ((msg[1] == '+') ? 1 : -1);
+	data = (protocol_t){ 0, 0 };
+	if (len > 1)
+	{
+		if (msg[1] == '+' || msg[1] == '-') { index = 2; }
+		if (len - index <= MAX_DIGS)
+		{
+			data.id = msg[0];
+			data.val = __Chars2Num__(msg + index, len - index) * ((msg[1] == '-') ? -1 : 1);
+		}
+	}
 
-	return &protocol;
-} // Need to fix this to recieve all formats
+	return &data;
+}
 
 /*******************************************************************************
  *******************************************************************************
@@ -69,30 +93,39 @@ protocol_t* protocolUnpack (uchar_t* msg)
  *******************************************************************************
  ******************************************************************************/
 
-uchar_t* __Num2Chars__ (int16_t num)
+uint8_t __Num2Chars__ (const uint16_t num, uchar_t* chars)
 {
-	static uchar_t chars[PROTOCOL_DIGS];
+	int16_t aux = num;
+	uint8_t len = 0;
 
-	for (uint8_t i = 0; i < PROTOCOL_DIGS; i++)
-		chars[i] = NUM2ASCII(0);
+	do { aux /= 10; }
+	while ((++len < MAX_DIGS) && aux);
 
-	for (uint8_t i = 0; i < MAX_DIGS; i++)
+	for (uint8_t i = 0; i < len; i++)
+		chars[i] = 0;
+
+	if (!aux)
 	{
-		chars[PROTOCOL_DIGS - 1 - i] = NUM2ASCII(ABS(num) % 10);
-		num /= 10;
+		aux = num;
+		for (uint8_t i = 0; i < len; i++)
+		{
+			chars[len - 1 - i] = NUM2ASCII(aux % 10);
+			aux /= 10;
+		}
 	}
+	else { len = 0; }
 
-	return chars;
+	return len;
 }
 
-int16_t __Chars2Num__ (uchar_t* chars)
+int16_t __Chars2Num__ (uchar_t* const chars, const int8_t len)
 {
 	int16_t num = 0;
 
-	for (uint8_t i = 0; i < MAX_DIGS; i++)
+	for (uint8_t i = 0; (i < len) && (i < MAX_DIGS); i++)
 	{
 		num *= 10;
-		num += ASCII2NUM(chars[i + 2]);
+		num += ASCII2NUM(chars[i]);
 	}
 
 	return num;

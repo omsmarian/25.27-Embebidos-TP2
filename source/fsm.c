@@ -14,16 +14,18 @@
 
 #include "fsm.h"
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define TABLE_END		EVENTS_CANT
+#define DEVELOPMENT_MODE	1
+
+#define TABLE_END			EVENTS_CANT
 
 // Number of edges per state (transitions) /////////////////////////////////////
-#define STATE_0_EDGES	3														// Extra space for default transition
-#define STATE_1_EDGES	2
+
+#define STATE_0_EDGES		3													// Extra space for default transition
+#define STATE_1_EDGES		2
 // Add more state edges here
 
 
@@ -42,7 +44,6 @@ static void pass (void);
 static void reset (void);
 
 static void updateAngle (void);
-
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -66,7 +67,6 @@ static fsm_state_t READ_ORIENTATION[] = { {TABLE_END, END, reset} };
 
 // Add more states here
 
-
 /*******************************************************************************
  *******************************************************************************
 						GLOBAL FUNCTION DEFINITIONS
@@ -87,7 +87,6 @@ fsm_state_t * fsmInit (void)
 {
  	return CHECK_UPDATE;
 }
-
 
 /*******************************************************************************
  *******************************************************************************

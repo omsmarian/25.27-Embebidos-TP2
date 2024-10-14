@@ -18,34 +18,32 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// Queues configuration ////////////////////////////////////////////////////////
+
 #define QUEUE_MAX_SIZE		24													// Complete with desired queue size
 #define QUEUES_MAX_CANT		2													// Complete with desired number of queues
+
+// Invalid data for the queue //////////////////////////////////////////////////
+
 #define QUEUE_INVALID_ID	255													// Complete according to QUEUES_MAX_CANT
-
-// Invalid data for queue /////////////////////////////////////////////////////////
-
 #define INVALID_DATA		0xFF												// Complete with your invalid data, according to data_t
 
 #define QUEUE_OVERFLOW		(QUEUE_MAX_SIZE + 1)
-#define QUEUE_UNDERFLOW		INVALID_DATA
-
+#define QUEUE_UNDERFLOW		(INVALID_DATA)
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
+// Data types for the queue ////////////////////////////////////////////////////
+
 typedef uint8_t queue_id_t;														// Complete according to QUEUES_MAX_CANT
-
-// Data type for queue /////////////////////////////////////////////////////////
-
 typedef unsigned char data_t;													// Complete with your data type
 typedef uint8_t count_t;														// Complete according to QUEUE_MAX_SIZE
-
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -114,7 +112,6 @@ count_t queueSize (queue_id_t id);
  * @param id Queue ID
  */
 void queueClear (queue_id_t id);
-
 
 /*******************************************************************************
  ******************************************************************************/

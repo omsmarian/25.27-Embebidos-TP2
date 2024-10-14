@@ -8,9 +8,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <gpio.h>
 #include "pisr.h"
 #include "hardware.h"
-#include "gpio.h"
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE

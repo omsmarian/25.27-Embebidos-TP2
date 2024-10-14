@@ -5,9 +5,9 @@
  *      Author: asolari
  */
 
+#include <old/can_communication.h>
 #include <stdlib.h>
 
-#include "can_communication.h"
 #include "macros.h"
 
 typedef unsigned char uchar_t;
@@ -21,6 +21,7 @@ void initBuffer(CircularBuffer *cb);
 
 uchar_t* itos (int16_t num);
 
+CAN_DataFrame frame;
 
 void otherBoardCommunicationsInit(void)
 {
@@ -41,7 +42,7 @@ void otherBoardCommunicationsInit(void)
     }
 
     // Inicializar el buffer de transmisión
-    CAN_ConfigureTxMB(8);
+    CAN_ConfigureTxMB(5);
 }
 
 void sendMeasurement2OtherBoards(measurement_t m)
@@ -68,22 +69,22 @@ void sendMeasurement2OtherBoards(measurement_t m)
     }
 
     // Ajustar la longitud del frame
-    frame.length = 1 + 3;
+    frame.length = 4;
 
     // Enviar el frame
-    CAN_WriteTxMB(8 , &frame);
+    CAN_WriteTxMB(5 , &frame);
 }
 
 uchar_t* itos (int16_t num)
 {
-	static uchar_t chars[5];
+	static uchar_t chars[3];
 
-	for (uint8_t i = 0; i < 5; i++)
+	for (uint8_t i = 0; i < 3; i++)
 		chars[i] = NUM2ASCII(0);
 
 	for (uint8_t i = 0; i < 3; i++)
 	{
-		chars[5 - 1 - i] = NUM2ASCII(ABS(num) % 10);
+		chars[2 - i] = NUM2ASCII(ABS(num) % 10);
 		num /= 10;
 	}
 
@@ -93,7 +94,9 @@ uchar_t* itos (int16_t num)
 bool receiveOtherBoardsMeasurement(measurement_t * m)
 {
     // Leer el frame del buffer circular
-    CAN_DataFrame frame = getFromBuffer(&cb);
+//    CAN_DataFrame frame = getFromBuffer(&cb);
+	CAN_DataFrame frame;
+	CAN_ReadRxMB(3, &frame);
 
     // Si el frame está vacío, el buffer estaba vacío
     if (frame.ID == 0 && frame.length == 0)
@@ -116,3 +119,7 @@ bool receiveOtherBoardsMeasurement(measurement_t * m)
     return true;
 }
 
+bool read (void)
+{
+	return CAN_ReadRxMB(1, &frame);										// Read frame from reception buffer
+}

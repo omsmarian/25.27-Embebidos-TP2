@@ -8,9 +8,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <gpio.h>
 #include "I2C.h"
 #include "hardware.h"
-#include "gpio.h"
 #include "board.h"
 #include <stdlib.h>
 

@@ -15,8 +15,7 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef enum
-{
+typedef enum {
 	UART_MSG,
 	I2C_MSG,
 	CAN_MSG,
@@ -24,8 +23,7 @@ typedef enum
 	EVENTS_CANT
 } fsm_event_t;
 
-//typedef enum
-//{
+//typedef enum {
 //	INIT,
 //	READ_ORIENTATION,
 //	TRANSMIT_CAN,
@@ -40,8 +38,7 @@ typedef enum
 //} fsm_state_id_t;
 
 typedef struct transition_edge fsm_state_t;
-struct transition_edge
-{
+struct transition_edge {
 	fsm_event_t event;
 	fsm_state_t * next_state;
 	void (* callback)(void);
@@ -64,7 +61,6 @@ fsm_state_t * fsmInit (void);
  * @return Next state
  */
 fsm_state_t * fsm (fsm_state_t * state, fsm_event_t event);
-
 
 /*******************************************************************************
  ******************************************************************************/

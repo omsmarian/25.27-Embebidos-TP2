@@ -14,9 +14,9 @@
 #include <math.h>
 
 #include "board.h"
-// #include "i2c.h"
-// #include "PDRV_I2C.h"
+#include "debug.h"																// For measuring ISR time
 #include "I2C.h"
+#include "macros.h"
 #include "pisr.h"
 #include "timer.h"
 #include "sensor.h"
@@ -26,49 +26,14 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE			1
-#define DEBUG_TP					1											// Debugging test points to measure ISR time
-
-#define CMP_IN(min, val, max)		(((min) < (val)) && ((val) < (max)))		// In:  (min, max)
-#define CMP_OUT(min, val, max)		(((val) <= (min)) || ((max) <= (val)))		// Out: (-inf, min] U [max, +inf)
-
-//#define M_PI						3.14159265358979323846
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-//typedef enum
-//{
-//	OFF,
-//	INIT_I2C,
-//	INIT_SENSOR
-//} init_t;
-
-// typedef enum
-// {
-// 	NONE,
-// 	STATUS,
-// 	DATA
-// } reading_state_t;
-
-typedef enum
-{
-	IDLE,
-	READING,
-} state_t;
-
-typedef enum
-{
-	BLOCKING,
-	NON_BLOCKING
-} mode_t;
-
-typedef enum
-{
-	BUSY,
-	DONE,
-	ERROR
-} bus_status_t;
+typedef enum { IDLE, READING } state_t;
+typedef enum { BLOCKING, NON_BLOCKING } mode_t;
+typedef enum { BUSY, DONE, ERROR } bus_status_t;
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -130,12 +95,15 @@ static bus_status_t transmitState (void);
  */
 static bus_status_t wait (void);
 
+static void checkBus (void);
+
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 static raw_data_t accel_data, magn_data;
 static sensor_t data, data_prev;
+static bool status_bus;
 
 /*******************************************************************************
  *******************************************************************************
@@ -153,6 +121,7 @@ bool sensorInit (void)
 	{
 		init();
 		pisrRegister(readData, PISR_FREQUENCY_HZ / SENSOR_FREQUENCY_HZ); // Configure PISR for the sensor
+		pisrRegister(checkBus, PISR_FREQUENCY_HZ / 1000);
 		status = true;
 	}
 
@@ -161,68 +130,71 @@ bool sensorInit (void)
 
 bool sensorConfig (void)
 {
-	static bool status = false;
+	static bool status[7] = { false, false, false, false, false, false, false }, status_all = false;
 	uint8_t databyte;
 
-	if (!status)
+	if (!status_all && status_bus)
 	{
-		status = readRegs(FXOS8700CQ_WHOAMI, &databyte, 1, BLOCKING) == DONE; // Read and check the ID
-		status = status && (databyte == FXOS8700CQ_WHOAMI_VAL);
+		if(!status[0] && status_bus)
+			status[0] = (status_bus = readRegs(FXOS8700CQ_WHOAMI, &databyte, 1, BLOCKING)) &&
+						(databyte == FXOS8700CQ_WHOAMI_VAL); // Read and check the ID
 
-		if (status)
+		if (!status[1] && status_bus)
 		{
 			databyte = 0x00; // Place into standby
-			status = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == DONE;
+			status[1] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
 		}
 
-		if (status)
+		if (status[2] && status_bus)
 		{
 			databyte = 0x1F; // No auto calibration, one-shot magn reset or measurement, 8x os and hybrid mode
-			status = writeRegs(FXOS8700CQ_M_CTRL_REG1, &databyte, 1, BLOCKING) == DONE;
+			status[2] = writeRegs(FXOS8700CQ_M_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
 		}
 
-		if (status)
+		if (status[3] && status_bus)
 		{
 			databyte = 0x20; // Map magn registers to follow accel, retain min/max latching and enable magn reset each cycle
-			status = writeRegs(FXOS8700CQ_M_CTRL_REG2, &databyte, 1, BLOCKING) == DONE;
+			status[3] = writeRegs(FXOS8700CQ_M_CTRL_REG2, &databyte, 1, BLOCKING) == BUSY;
 		}
 
-		if (status)
+		if (status[4] && status_bus)
 		{
 			databyte = 0x01; //No filter and accel range of +/-4g range with 0.488mg/LSB
-			status = writeRegs(FXOS8700CQ_XYZ_DATA_CFG, &databyte, 1, BLOCKING) == DONE;
+			status[4] = writeRegs(FXOS8700CQ_XYZ_DATA_CFG, &databyte, 1, BLOCKING) == BUSY;
 		}
 
-		if (status)
+		if (status[5] && status_bus)
 		{
 			databyte = 0x0D; // 200Hz data rate, low noise, 16 bit reads, out of standby and enable sampling
-			status = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == DONE;
+			status[5] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
 		}
 
-		if (status)
+		if (status[6] && status_bus)
 		{
 			databyte = 0x00; // Disable FIFO
-			status = writeRegs(FXOS8700CQ_F_SETUP, &databyte, 1, BLOCKING) == DONE;
+			status[6] = writeRegs(FXOS8700CQ_F_SETUP, &databyte, 1, BLOCKING) == BUSY;
 		}
+
+		status_all = 0;
+		for (uint8_t i = 0; i < 7; i++)
+			status_all |= status[i];
 	}
 
-	return status;
+	return status_all;
 }
 
-bool sensorGetStatus (sensor_axis_t axis)
+sensor_status_t* sensorGetStatus ()
 {
-	bool update_roll, update_pitch, update_yaw;
+	static sensor_status_t status;
+	status = (sensor_status_t){ false, false, false };
 
 	processData();
 
-	update_roll		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.roll	- data.roll,	ANGLE_THRESHOLD);
-	update_pitch	= CMP_OUT(-ANGLE_THRESHOLD, data_prev.pitch	- data.pitch,	ANGLE_THRESHOLD);
-	update_yaw		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.yaw	- data.yaw,		ANGLE_THRESHOLD);
+	status.roll		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.roll	- data.roll,	ANGLE_THRESHOLD);
+	status.pitch	= CMP_OUT(-ANGLE_THRESHOLD, data_prev.pitch	- data.pitch,	ANGLE_THRESHOLD);
+	status.yaw		= CMP_OUT(-ANGLE_THRESHOLD, data_prev.yaw	- data.yaw,		ANGLE_THRESHOLD);
 
-	return (axis == ROLL)	? update_roll	:
-		   (axis == PITCH)	? update_pitch	:
-		   (axis == YAW)	? update_yaw	:
-		   (axis == ALL)	? (update_roll || update_pitch || update_yaw) : false;
+	return &status;
 }
 
 raw_data_t* sensorGetAccelRawData (void)
@@ -237,7 +209,7 @@ raw_data_t* sensorGetMagnRawData (void)
 
 sensor_t* sensorGetAngleData (void)
 {
-	processData();
+	// processData();
 	data_prev = data;
 
 	return &data;
@@ -249,58 +221,11 @@ sensor_t* sensorGetAngleData (void)
  *******************************************************************************
  ******************************************************************************/
 
-// static void readData (void)
-// {
-// 	static reading_state_t state = NONE;
-// 	static uint8_t status = 0, buffer[FXOS8700CQ_READ_LEN];
-
-// 	switch (state)
-// 	{
-// 		case NONE:																// Wait for the bus to be free and read status
-// 			if((transmitState() == I2C_Idle) && (readRegs(FXOS8700CQ_STATUS, &status, 1) == I2C_Busy))
-// 				state = STATUS;
-// 			break;
-
-// 		case STATUS:
-// 			if (transmitState() == I2C_Done)
-// 			{
-// 				if ((status &= 0x02) && (readRegs(FXOS8700CQ_OUT_X_MSB, buffer, FXOS8700CQ_READ_LEN) == I2C_Busy))											// Check if data is ready
-// 					state = DATA;
-// 				else
-// 					state = NONE;
-// 			}
-// 			else if (transmitState() == I2C_Error)
-// 				state = NONE;
-// 			break;
-		
-// 		case DATA:
-// 			if (transmitState() == I2C_Done)
-// 			{
-// 				accel_data.x = (int16_t)((buffer[0] << 8) | buffer[1]) >> 2;
-// 				accel_data.y = (int16_t)((buffer[2] << 8) | buffer[3]) >> 2;
-// 				accel_data.z = (int16_t)((buffer[4] << 8) | buffer[5]) >> 2;
-
-// 				magn_data.x = (int16_t)((buffer[6]  << 8) | buffer[7]);
-// 				magn_data.y = (int16_t)((buffer[8]  << 8) | buffer[9]);
-// 				magn_data.z = (int16_t)((buffer[10] << 8) | buffer[11]);
-
-// 				if(readRegs(FXOS8700CQ_STATUS, &status, 1) == I2C_Busy)
-// 					state = STATUS;
-// 				else
-// 					state = NONE;
-// 			}
-// 			else if (transmitState() == I2C_Error)
-// 				state = NONE;
-// 			break;
-
-// 		default:
-// 			state = NONE;
-// 			break;
-// 	}
-// }
-
 static void readData (void)
 {
+#if DEBUG_SENSOR
+P_DEBUG_TP_SET
+#endif
 	static state_t state = IDLE;
 	static uint8_t buffer[FXOS8700CQ_READ_LEN];
 
@@ -332,6 +257,9 @@ static void readData (void)
 			state = IDLE;
 			break;
 	}
+#if DEBUG_SENSOR
+P_DEBUG_TP_CLR
+#endif
 }
 
 static void processData (void)
@@ -342,36 +270,6 @@ static void processData (void)
 }
 
 // Helper Functions ////////////////////////////////////////////////////////////
-
-// static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
-// {
-// 	uint8_t buffer[1] = {reg};
-
-// 	return I2C_InitObject(I2C0_M, data, len, buffer, 1, FXOS8700CQ_SLAVE_ADDR);
-// }
-
-// static I2C_Status_t writeRegs (uint8_t reg, uint8_t * data, size_t len)
-// {
-// 	uint8_t buffer[len + 1];
-
-// 	buffer[0] = reg;
-// 	memcpy(&buffer[1], data, len);
-
-// 	return I2C_InitObject(I2C0_M, NULL, 0, buffer, len + 1, FXOS8700CQ_SLAVE_ADDR);
-// }
-
-// static I2C_Status_t transmitState (void)
-// {
-// 	return i2cTransactionState(I2C0_M);
-// }
-
-// static I2C_Status_t readRegs ( uint8_t reg, uint8_t * data, size_t len)
-// {
-// 	uint8_t buffer[1] = {reg};
-
-// 	return i2cSendSequence(0, FXOS8700CQ_SLAVE_ADDR, buffer, 1, data, len);
-
-// }
 
 static bool init (void)
 {
@@ -390,9 +288,9 @@ static bus_status_t readRegs (uint8_t reg, uint8_t* data, uint8_t len, mode_t mo
 {
 	bus_status_t status = ERROR;
 
-	if (mode == BLOCKING) { wait(); }
+//	if (mode == BLOCKING) { wait(); }
 	status = bus_status[I2C_Transmit(I2C0_M, data, len, FXOS8700CQ_SLAVE_ADDR, reg, I2C_Read)];
-	if (mode == BLOCKING) { status = wait(); }
+//	if (mode == BLOCKING) { status = wait(); }
 
 	return status;
 }
@@ -401,9 +299,9 @@ static bus_status_t writeRegs (uint8_t reg, uint8_t* data, uint8_t len, mode_t m
 {
 	bus_status_t status = ERROR;
 
-	if (mode == BLOCKING) { wait(); }
+//	if (mode == BLOCKING) { wait(); }
 	status = bus_status[I2C_Transmit(I2C0_M, data, len, FXOS8700CQ_SLAVE_ADDR, reg, I2C_Write)];
-	if (mode == BLOCKING) { status = wait(); }
+//	if (mode == BLOCKING) { status = wait(); }
 
 	return status;
 }
@@ -415,15 +313,16 @@ static bus_status_t transmitState (void)
 
 static bus_status_t wait (void)
 {
-	// I2C_Status_t status;
-	// do { status = I2C_GetStatus(I2C0_M); }
-	// while ((status == I2C_Busy) || (status == I2C_Error));
-
 	bus_status_t status;
 
 	while ((status = transmitState()) == BUSY);
 
 	return status;
+}
+
+static void checkBus (void)
+{
+	status_bus = transmitState();
 }
 
 /******************************************************************************/

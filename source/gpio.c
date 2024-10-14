@@ -18,14 +18,14 @@
 #include "board.h"
 #include "macros.h"
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define PORTS_CANT		5	// A, B, C, D, E
-#define FUN_CANT		32	// Only 1 per PIN
+#define DEVELOPMENT_MODE	1
 
+#define PORTS_CANT			5	// A, B, C, D, E
+#define FUN_CANT			32	// Only 1 per PIN
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -33,13 +33,11 @@
 
 pinIrqFun_t irqFuns[PORTS_CANT][FUN_CANT] = { NULL };
 
-
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
 uint8_t PinBit2Num (uint32_t pin);
-
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -57,7 +55,6 @@ static uint8_t const        GPIO_IRQn[] 		= { PORT_eDisabled,
 									 	 	        PORT_eInterruptRising,
 											        PORT_eInterruptFalling,
 											        PORT_eInterruptEither };
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -131,7 +128,6 @@ bool gpioRead (pin_t pin)
 	return GPIO_Ports[PIN2PORT(pin)]->PDIR & (HIGH<<PIN2NUM(pin));
 }
 
-
 /*******************************************************************************
  *******************************************************************************
                         LOCAL FUNCTION DEFINITIONS
@@ -140,7 +136,9 @@ bool gpioRead (pin_t pin)
 
 __ISR__ PORTA_IRQHandler (void)
 {
-//	DEBUG_TP_SET_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
 	for (uint8_t i = 0; i < 32; i++) // Very slow, there are better ways such as CLZ
 		if (BITGET(PORTA->ISFR, i))
 		{
@@ -148,12 +146,16 @@ __ISR__ PORTA_IRQHandler (void)
 			if(irqFuns[PA][i] != NULL)
 				irqFuns[PA][i]();
 		}
-//	DEBUG_TP_CLR_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 __ISR__ PORTB_IRQHandler (void)
 {
-//	DEBUG_TP_SET_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTB->ISFR, i))
 		{
@@ -161,12 +163,16 @@ __ISR__ PORTB_IRQHandler (void)
 			if(irqFuns[PB][i] != NULL)
 				irqFuns[PB][i]();
 		}
-//	DEBUG_TP_CLR_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 __ISR__ PORTC_IRQHandler (void)
 {
-//	DEBUG_TP_SET_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTC->ISFR, i))
 		{
@@ -174,12 +180,16 @@ __ISR__ PORTC_IRQHandler (void)
 			if(irqFuns[PC][i] != NULL)
 				irqFuns[PC][i]();
 		}
-//	DEBUG_TP_CLR_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 __ISR__ PORTD_IRQHandler (void)
 {
-//	DEBUG_TP_SET_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTD->ISFR, i))
 		{
@@ -187,12 +197,16 @@ __ISR__ PORTD_IRQHandler (void)
 			if(irqFuns[PD][i] != NULL)
 				irqFuns[PD][i]();
 		}
-//	DEBUG_TP_CLR_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 __ISR__ PORTE_IRQHandler (void)
 {
-//	DEBUG_TP_SET_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_SET
+#endif
 	for (uint8_t i = 0; i < 32; i++)
 		if (BITGET(PORTE->ISFR, i))
 		{
@@ -200,7 +214,9 @@ __ISR__ PORTE_IRQHandler (void)
 			if(irqFuns[PE][i] != NULL)
 				irqFuns[PE][i]();
 		}
-//	DEBUG_TP_CLR_D;
+#if DEBUG_GPIO
+D_DEBUG_TP_CLR
+#endif
 }
 
 // Helper functions ////////////////////////////////////////////////////////////
@@ -211,6 +227,5 @@ uint8_t PinBit2Num (uint32_t pin)
 	while (pin >> i++);
 	return i;
 }
-
 
 /******************************************************************************/

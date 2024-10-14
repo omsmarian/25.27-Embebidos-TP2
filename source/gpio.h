@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
@@ -42,31 +41,6 @@
 #define LOW     			0
 #define HIGH    			1
 #endif // LOW
-
-// Manual Write (to measure ISR time)
-
-// Periodic ISR
-#define P_SET_ADDRS			(0x400FF084u) // PTB9
-#define P_SET_PTR			((uint32_t *)P_SET_ADDRS)
-#define P_SET_VAL			(1<<9)
-
-#define P_CLR_ADDRS			(0x400FF088u)
-#define P_CLR_PTR			((uint32_t *)P_CLR_ADDRS)
-#define P_CLR_VAL			(1<<9)
-#define P_DEBUG_TP_SET		*(P_SET_PTR) = P_SET_VAL
-#define P_DEBUG_TP_CLR		*(P_CLR_PTR) = P_CLR_VAL
-
-// Dedicated ISR
-#define D_SET_ADDRS			(0x400FF084u) // PTB5
-#define D_SET_PTR			((uint32_t *)D_SET_ADDRS)
-#define D_SET_VAL			(1<<5)
-
-#define D_CLR_ADDRS			(0x400FF088u)
-#define D_CLR_PTR			((uint32_t *)D_CLR_ADDRS)
-#define D_CLR_VAL			(1<<5)
-#define D_DEBUG_TP_SET		*(D_SET_PTR) = D_SET_VAL
-#define D_DEBUG_TP_CLR		*(D_CLR_PTR) = D_CLR_VAL
-
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -119,7 +93,6 @@ typedef enum {
 
 typedef void (*pinIrqFun_t)(void);
 
-
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
@@ -159,7 +132,6 @@ void gpioToggle (pin_t pin);
  * @return HIGH or LOW
  */
 bool gpioRead (pin_t pin);
-
 
 /*******************************************************************************
  ******************************************************************************/

@@ -1,66 +1,42 @@
-/* Simple Serial test program, based on the work of Daniel Jacoby */
+/* Simple Protocol test program */
 
 #include <stdio.h>
+#include <string.h>
+#include "../protocol.h"
 
-// #include "board.h"
-// #include "gpio.h"
-// #include "hardware.h"
-#include "protocol.h"
-// #include "sensor.h"
-// #include "serial.h"
-// #include "timer.h"
-
-#define __FOREVER__ 	for(;;)
+void test (protocol_t* p);
 
 int main (void)
 {
-	uchar_t start_msg[] = "hello";
-	uchar_t* msg = start_msg;
-//	uint8_t len = sizeof(start_msg) - 1;
-	uint8_t len = 5;
-	// ticks_t timeout, timeout2;
-	protocol_t angle_test = { PITCH, -15398 };
+	protocol_t p;
 
- 	// hw_Init();
-	// hw_DisableInterrupts();
-
-	// serialInit();
-	// serialWriteData(msg, len);
-
-	// timerInit();
-	// timeout = timerStart(TIMER_MS2TICKS(100));
-	// timeout2 = timerStart(TIMER_MS2TICKS(1000));
-
-//	sensorInit();
-
-//	while(!timerExpired(timeout));
-//	msg = serialReadData(&len);
-
-	// hw_EnableInterrupts();
-
-	printf("Original angles: %d, %d\n", angle_test.angleId, angle_test.angleVal);
-	msg = protocolPack(&angle_test);
-	printf("Packed message: %s\n", msg);
-	angle_test = *protocolUnpack(msg);
-	printf("Unpacked angles: %d, %d\n", angle_test.angleId, angle_test.angleVal);
+	p = (protocol_t){ 'A', 123 };
+	test(&p);
+	p = (protocol_t){ 'B', +12 };
+	test(&p);
+	p = (protocol_t){ 'b', -1 };
+	test(&p);
+	p = (protocol_t){ '1', -9999 };
+	test(&p);
+	p = (protocol_t){ '1', -321 };
+	test(&p);
+	p = (protocol_t){ 49, -0 };
+	test(&p);
 
 	return 0;
+}
 
-	__FOREVER__
-	{
+void test (protocol_t* p)
+{
+	uchar_t msg[PROTOCOL_DIGS];
+	uint8_t len;
 
-		// sensor_t data = readAcceleration();
-//		raw_data_t* accel = sensorGetAccelRawData();
-//		raw_data_t* magn = sensorGetMagnRawData();
-
-//		if(timerExpired(timeout) && !timerExpired(timeout2))
-//		{
-////			if(serialReadStatus() && serialWriteStatus())
-//			{
-//				serialWriteData(msg, len);
-//				msg = serialReadData(&len);
-//			}
-////			timeout = timerStart(TIMER_MS2TICKS(100));
-//		}
-	}
+	printf("Original angles: %c, %d\n", p->id, p->val);
+	len = protocolPack(p, msg);
+	printf("Packed message: ");
+	for(int i = 0; i < len; i++)
+		printf("%c", (msg)[i]);
+	printf("\n");
+	p = protocolUnpack(msg, len);
+	printf("Unpacked angles: %c, %d\n", p->id, p->val);
 }

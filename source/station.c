@@ -20,7 +20,6 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE			1
-#define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
 /*******************************************************************************
  *******************************************************************************
@@ -30,7 +29,7 @@
 
 // Main Services ///////////////////////////////////////////////////////////////
 
-void stationInit (void)
+bool stationInit (void)
 {
 	bool status = false;
 
@@ -42,7 +41,7 @@ void stationInit (void)
 			CAN_EnableMbInterrupts(i);											// Enable the interrupt
 		}
 
-		CAN_ConfigureTxMB(STATION_ID);											// Initialize transmission buffer
+		CAN_ConfigureTxMB(GN);													// Initialize transmission buffer
 
 		status = true;
 	}
@@ -50,62 +49,34 @@ void stationInit (void)
 	return status;
 }
 
-bool stationStatus (station_id_t station)
+void stationSend (station_t* station)
 {
-//	return canStatus(station);
-	return true;
-}
-
-bool stationStatusAll (void)
-{
-//	return canStatusAll();
-	return true;
-}
-
-void stationSendAll (uchar_t* data, uint8_t len)
-{
-	CAN_DataFrame frame = { .ID = STATION_ID, .length = len };
+	CAN_DataFrame frame = { .ID = STATION_ID, .length = station->len };
 
 	for (uint8_t i = 0; i < FRAME_SIZE; i++)
 		frame.data[i] = 0;														//Clean frame data
 
-	for (uint8_t i = 0; (i < FRAME_SIZE) && (i < len); i++)
-		frame.data[i] = data[i];
+	for (uint8_t i = 0; (i < FRAME_SIZE) && (i < frame.length); i++)
+		frame.data[i] = station->data[i];
 
-	CAN_WriteTxMB(STATION_ID, &frame);											// Send frame
+	CAN_WriteTxMB(GN, &frame);													// Send frame
 }
 
-void stationSend (station_id_t station, uchar_t* data, uint8_t len)
-{
-	// canSend(station, data);
-}
-
-station_id_t stationReceive (uchar_t* data)
+void stationReceive (station_t* station)
 {
     CAN_DataFrame frame = getFromBuffer(&cb);									// Read frame from circular buffer
 	// CAN_DataFrame frame;
 	// CAN_ReadRxMB(STATION_ID, &frame);										// Read frame from reception buffer
 
     if ((frame.ID != 0) || (frame.length != 0))									// If the frame is empty, the buffer was empty
-		for (uint8_t i = 0; i < frame.length; i++)
-			data[i] = frame.data[i];
-	else
-		frame.ID = STATION_BASE_ID + STATIONS_CANT;
-
-    return frame.ID - STATION_BASE_ID;
+    {
+    	for (uint8_t i = 0; (i < station->len) && (i < frame.length); i++)
+			station->data[i] = frame.data[i];
+		station->len = frame.length;
+		station->id = frame.ID - STATION_BASE_ID;
+    }
+    else
+    	station->len = 0;
 }
-
-void stationReceiveAll (uchar_t** data)
-{
-	// for (uint8_t i = 0; i < STATIONS_CANT; i++)
-	// 	stationReceive(i, data[i]);
-}
-
-/*******************************************************************************
- *******************************************************************************
-						LOCAL FUNCTION DEFINITIONS
- *******************************************************************************
- ******************************************************************************/
-
 
 /******************************************************************************/

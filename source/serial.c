@@ -18,23 +18,13 @@
 #include "timer.h"
 #include "serial.h"
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE			1
-#define DEBUG_TP					1											// Debugging test points to measure ISR time
 
 #define SERIAL_PORT					UART0_ID
-
-
-/*******************************************************************************
- * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
- ******************************************************************************/
-
-static unsigned char data[QUEUE_MAX_SIZE];
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -62,6 +52,8 @@ bool serialWriteData (uchar_t* data, uint8_t len)
 
 uchar_t* serialReadData (uint8_t* len)
 {
+	static unsigned char data[QUEUE_MAX_SIZE];
+
 	*len = uartReadMsg(SERIAL_PORT, data, uartGetRxMsgLength(SERIAL_PORT));
 
 	return data;

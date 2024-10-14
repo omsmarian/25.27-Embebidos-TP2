@@ -1,6 +1,6 @@
 /***************************************************************************//**
   @file     protocol.h
-  @brief    Data frame packer and unpacker, using angle protocol 'R+123'
+  @brief    Data frame packer and unpacker, using protocol '{Id}[ValSign]{Val}'
   @author   Group 4: - Oms, Mariano
                      - Solari Raigoso, Agustín
                      - Wickham, Tomás
@@ -22,6 +22,8 @@
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
+// Protocol configuration //////////////////////////////////////////////////////
+
 #define MAX_DIGS		3														// Maximum digits for the angle
 #define PROTOCOL_DIGS	(MAX_DIGS + 2)											// Protocol size: id + sign + val
 
@@ -29,38 +31,27 @@
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef struct
-{
-	// station_id_t stationId;
-	sensor_axis_t angleId;
-	angle_t angleVal;
-} protocol_t;
+// typedef struct {
+// 	// station_id_t stationId;
+// 	sensor_axis_t angleId;
+// 	angle_t angleVal;
+// } protocol_t;
+
+// Data types for the protocol /////////////////////////////////////////////////
 
 typedef unsigned char uchar_t;
+typedef uchar_t protocol_id_t;
+typedef int16_t protocol_val_t;
 
-// typedef struct
-// {
-// 	uchar_t id;
-// 	uchar_t sign;
-// 	uchar_t val[MAX_DIGS];
-// } protocol_msg_t;
-
-// typedef struct
-// {
-// 	uchar_t id;
-// 	uchar_t sign;
-// 	int16_t val;
-// } protocol_msg2_t;
-
-// typedef struct
-// {
-// 	sensor_axis_t angleId;
-// 	uchar_t angleIdChar;
-// } angle_id_t;
-
-//const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
-
-// angle_id_t angleIdChars[] = { { ROLL, 'R' }, { PITCH, 'C' }, { YAW, 'O' } };
+/**
+ * @brief Protocol data structure
+ * @param id Protocol ID, not processed when packing
+ * @param val Protocol value, converted to string before packing
+ */
+typedef struct {
+	protocol_id_t id;
+	protocol_val_t val;
+} protocol_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -69,16 +60,18 @@ typedef unsigned char uchar_t;
 /**
  * @brief Pack data into a message using the protocol
  * @param data Data to pack
- * @return Packed message
+ * @param msg Place to store packed message
+ * @return Message length
  */
-uchar_t* protocolPack (protocol_t* data);
+uint8_t protocolPack (protocol_t* const data, uchar_t msg[PROTOCOL_DIGS]);
 
 /**
  * @brief Unpack a message using the protocol
  * @param msg Message to unpack
+ * @param len Message length
  * @return Unpacked data
  */
-protocol_t* protocolUnpack (uchar_t* msg);
+protocol_t* protocolUnpack (uchar_t* const msg, const uint8_t len);
 
 /*******************************************************************************
  ******************************************************************************/

@@ -18,21 +18,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define TIMER_TICK_MS       1
-#define TIMER_MS2TICKS(ms)	((ms)/TIMER_TICK_MS)
-
+#define TIMER_TICK_US       500
+#define TIMER_MS2TICKS(ms)	(1000*(ms)/TIMER_TICK_US)
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef int32_t ticks_t;
-
+typedef int64_t ticks_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -42,7 +39,6 @@ typedef int32_t ticks_t;
  * @brief Initialice timer and corresponding peripheral
  */
 void timerInit(void);
-
 
 // Non-Blocking services ///////////////////////////////////////////////////////
 
@@ -60,7 +56,6 @@ ticks_t timerStart(ticks_t ticks);
  */
 bool timerExpired(ticks_t timeout);
 
-
 // Blocking services ///////////////////////////////////////////////////////////
 
 /**
@@ -69,6 +64,7 @@ bool timerExpired(ticks_t timeout);
  */
 void timerDelay(ticks_t ticks);
 
+ticks_t timerCounter(void);
 
 /*******************************************************************************
  ******************************************************************************/

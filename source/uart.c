@@ -12,33 +12,30 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+#include <gpio.h>
 #include "hardware.h"
-#include "MK64F12.h"
+// #include "MK64F12.h"
 
 #include "board.h"
 #include "cqueue.h"
-#include "gpio.h"
 #include "pisr.h"
 #include "timer.h"
 #include "uart.h"
-
 
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
-#define DEVELOPMENT_MODE				1
-#define DEBUG_TP						1										// Debugging Test Points to measure ISR time
+#define DEVELOPMENT_MODE					1
 
-#define PORT_REG(port, reg)				(PORT_Ptrs[port]->reg)
+#define PORT_REG(port, reg)					(PORT_Ptrs[port]->reg)
 
-#define UART_MAX_BAUDRATE				(__CORE_CLOCK__ / 16)
-#define UART_HAL_DEFAULT_BAUDRATE		9600
-#define UART_REG(id, reg)				(UART_Ptrs[id]->reg)
+#define UART_MAX_BAUDRATE					(__CORE_CLOCK__ / 16)
+#define UART_HAL_DEFAULT_BAUDRATE			9600
+#define UART_REG(id, reg)					(UART_Ptrs[id]->reg)
 
 #define REG_WRITE(type, reg, shift, mask)	(((type)(((type)(reg)) << (shift))) & (mask))
 //#define REG_READ(type, reg, shift, mask)	(((type)(((type)(reg)) & (mask))) >> (shift))
-
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
@@ -48,7 +45,6 @@ void handler (void);
 void update (uart_id_t id);
 void setBaudRate (uart_id_t id, uint32_t br);
 void configFIFO (uart_id_t id, uart_fifo_t fifo);
-
 
 /*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
@@ -82,7 +78,6 @@ static queue_id_t tx_queue[UART_CANT_IDS];
 // static tim_id_t uart_timers[UART_CANT_IDS];
 
 static uart_id_t irq = UART_CANT_IDS;
-
 
 /*******************************************************************************
  *******************************************************************************
@@ -140,7 +135,7 @@ bool uartInit (uart_id_t id, uart_cfg_t config)
 		rx_queue[id] = queueInit();
 		tx_queue[id] = queueInit();
 
-		/* Register PISR */
+		/* Register PISR to update the queues */
 		pisrRegister(handler, PISR_FREQUENCY_HZ / UART_FREQUENCY_HZ);
 
 		/* Set up a timer to update the queues */
@@ -188,7 +183,6 @@ uint8_t uartIsTxMsgComplete (uart_id_t id)
 	return queueIsEmpty(tx_queue[id]);
 }
 
-
 /*******************************************************************************
  *******************************************************************************
 						LOCAL FUNCTION DEFINITIONS
@@ -206,6 +200,9 @@ __ISR__ UART5_RX_TX_IRQHandler (void) {	irq = UART5_ID; handler(); }
 
 void handler (void)																// Separate so that it can be called from the PISR/timer as well
 {
+#if DEBUG_SENSOR
+P_DEBUG_TP_SET
+#endif
 	if(irq != UART_CANT_IDS)
 	{
 		update(irq);
@@ -215,6 +212,9 @@ void handler (void)																// Separate so that it can be called from the
 		for(uint8_t id = 0; id < UART_CANT_IDS; id++)
 			if(init[id])
 				update(id);
+#if DEBUG_SENSOR
+P_DEBUG_TP_CLR
+#endif
 }
 
 void update (uart_id_t id)
@@ -226,17 +226,9 @@ void update (uart_id_t id)
 		queuePush(rx_queue[id], UART_REG(id, D));
 
 	count = UART_REG(id, TCFIFO);
-//	while((count++ != REG_READ(uint8_t, UART_REG(id, PFIFO), UART_PFIFO_TXFIFOSIZE_MASK, UART_PFIFO_TXFIFOSIZE_SHIFT))
 	while((count++ != ((UART_REG(id, PFIFO) & UART_PFIFO_TXFIFOSIZE_MASK) >> UART_PFIFO_TXFIFOSIZE_SHIFT))
 		&& !queueIsEmpty(tx_queue[id])) UART_REG(id, D) = queuePop(tx_queue[id]);
-
-	// // while(!(UART_REG(id, S1) & UART_SFIFO_RXEMPT_MASK) && !queueIsFull(rx_queue[id]))
-	// while((UART_REG(id, S1) & UART_S1_RDRF_MASK) && !queueIsFull(rx_queue[id]))
-	// 	queuePush(rx_queue[id], UART_REG(id, D));
-
-	// while((UART_REG(id, S1) & UART_S1_TDRE_MASK) && !queueIsEmpty(tx_queue[id]))
-	// 	UART_REG(id, D) = queuePop(tx_queue[id]);
-} // S1 could be read in the dedicated irq and set a flag checked by the periodic isr
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -402,6 +394,5 @@ void uartSetMatchChar2 (uart_id_t id, bool enable)
 	UART_REG(id, C3) = (UART_REG(id, C3) & ~UART_C3_MAEN2_MASK) | UART_C3_MAEN2(enable);
 }
 */
-
 
 /******************************************************************************/

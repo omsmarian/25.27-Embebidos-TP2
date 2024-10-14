@@ -8,11 +8,11 @@
 #ifndef CAN_H_
 #define CAN_H_
 
+#include <gpio.h>
 #include "stdbool.h"
 #include "MK64F12.h"
 //#include "fsl_port.h"
 //#include "fsl_debug_console.h"
-#include "gpio.h"
 
 
 #define PIN_CAN0_TX PORTNUM2PIN(PB,18)

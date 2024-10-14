@@ -18,14 +18,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 /*******************************************************************************
  * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
  ******************************************************************************/
 
 #define UART_MAX_IDS		UART_CANT_IDS
-#define UART_FREQUENCY_HZ	5000U
-
+#define UART_FREQUENCY_HZ	1500U
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -84,7 +82,6 @@ typedef struct {
 //	uint8_t			data;
 } uart_cfg_t;
 
-
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
  ******************************************************************************/
@@ -139,7 +136,6 @@ uint8_t uartWriteMsg (uart_id_t id, const uchar_t* msg, uint8_t cant);
 uint8_t uartIsTxMsgComplete (uart_id_t id);
 
 // Blocking Services ///////////////////////////////////////////////////////////
-
 
 /*******************************************************************************
  ******************************************************************************/

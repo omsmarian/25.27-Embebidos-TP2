@@ -12,7 +12,7 @@
 
 #define __FOREVER__ 	for(;;)
 
-int main (void)
+int main3 (void)
 {
 	uchar_t start_msg[] = "hello";
 	uchar_t* msg = start_msg;

@@ -44,5 +44,6 @@ void sendMeasurement2OtherBoards(measurement_t m);
  */
 bool receiveOtherBoardsMeasurement(measurement_t * m);
 
+bool read (void);
 
 #endif /* CAN_COMMUNICATION_H_ */

@@ -25,12 +25,11 @@
 #define DEBUG_TP					1											// Debugging Test Points to measure ISR time
 
 #define GN							4											// Group number
-#define STATION_BASE_ID				0x100
+#define STATION_BASE_ID				0x100U
 #define STATION_ID					(STATION_BASE_ID + GN)
-
 #define STATIONS_MASK				0b000100000111
 
-// #define STATIONS_CANT				5
+#define DATA_MAX_SIZE				8											// Complete according to expected data size
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
@@ -46,12 +45,13 @@ typedef enum {
 	STATIONS_CANT
 } station_id_t;
 
-// typedef enum {
-// 	SINGLE,
-// 	PERIODIC
-// } station_mode_t;
-
 typedef unsigned char uchar_t;
+
+typedef struct {
+	station_id_t id;
+	uchar_t* data;
+	uint8_t len;
+} station_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -59,62 +59,21 @@ typedef unsigned char uchar_t;
 
 /**
  * @brief Initialize the stations module
+ * @return Initialization succeed
  */
-void stationInit (void);
+bool stationInit (void);
 
 /**
- * @brief Check the status of a station
- * @param station Station to check
- * @return true if the station has sent a message
+ * @brief Send data to all station
+ * @param station Data to send (including Id and message length)
  */
-bool stationStatus (station_id_t station);
-
-/**
- * @brief Check the status of all stations
- * @return true if any station has sent a message
- */
-bool stationStatusAll (void);
-
-/**
- * @brief Send data to a station
- * @param station Station to send data to
- * @param data Data to send
- */
-void stationSend (station_id_t station, uchar_t* data, uint8_t len);
-
-/**
- * @brief Send data to all stations
- * @param data Data to send
- */
-void stationSendAll (uchar_t* data, uint8_t len);
+void stationSend (station_t* station);
 
 /**
  * @brief Receive data from a station
- * @param station Station to receive data from
- * @param data Data received
- * @return ID of the station that sent the data
+ * @param station Place to store received data (including Id and message length)
  */
-station_id_t stationReceive (uchar_t* data);
-
-/**
- * @brief Receive data from all stations
- * @param data Data received
- */
-void stationReceiveAll (uchar_t** data);
-
-///**
-// * @brief Set the callback for a station
-// * @param station Station to set the callback for
-// * @param callback Callback to set
-// */
-//void stationSetCallback (station_id_t station, void (*callback)(uint8_t*));
-//
-///**
-// * @brief Set the callback for all stations
-// * @param callback Callback to set
-// */
-//void stationSetCallbackAll (void (*callback)(uint8_t*));
-
+void stationReceive (station_t* station);
 
 /*******************************************************************************
  ******************************************************************************/
