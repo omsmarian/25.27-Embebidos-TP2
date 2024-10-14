@@ -62,6 +62,11 @@ typedef enum {
 } uart_fifo_t;
 
 typedef enum {
+	UART_ISR_IRQ,
+	UART_ISR_PERIODIC
+} uart_isr_t;
+
+typedef enum {
 	UART0_ID,
 	UART1_ID,
 	UART2_ID,
@@ -79,7 +84,7 @@ typedef struct {
 	uart_stops_t	stops;
 	uart_rx_tx_t	RxTx;
 	uart_fifo_t		fifo;
-//	uint8_t			data;
+	uart_isr_t		isr;
 } uart_cfg_t;
 
 /*******************************************************************************

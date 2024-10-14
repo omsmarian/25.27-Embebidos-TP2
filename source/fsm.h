@@ -40,7 +40,7 @@ typedef enum {
 typedef struct transition_edge fsm_state_t;
 struct transition_edge {
 	fsm_event_t event;
-	fsm_state_t * next_state;
+	fsm_state_t* next_state;
 	void (* callback)(void);
 };
 
@@ -52,7 +52,7 @@ struct transition_edge {
  * @brief FSM initialization
  * @return Initial state
  */
-fsm_state_t * fsmInit (void);
+fsm_state_t* fsmInit (void);
 
 /**
  * @brief FSM interpreter
@@ -60,7 +60,7 @@ fsm_state_t * fsmInit (void);
  * @param event Incoming event
  * @return Next state
  */
-fsm_state_t * fsm (fsm_state_t * state, fsm_event_t event);
+fsm_state_t* fsm (fsm_state_t* state, fsm_event_t event);
 
 /*******************************************************************************
  ******************************************************************************/

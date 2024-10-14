@@ -36,11 +36,13 @@
 
 bool serialInit (void)
 {
-	uart_cfg_t config = {9600, UART_MODE_8,
+	uart_cfg_t config = {9600,
+						 UART_MODE_8,
 						 UART_PARITY_NONE,
 						 UART_STOPS_1,
 						 UART_RX_TX_ENABLED,
-						 UART_FIFO_RX_TX_ENABLED};
+						 UART_FIFO_RX_TX_ENABLED,
+						 UART_ISR_PERIODIC};
 
 	return uartInit(SERIAL_PORT, config);
 }

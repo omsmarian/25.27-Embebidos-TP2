@@ -11,7 +11,9 @@
  * INCLUDE HEADER FILES
  ******************************************************************************/
 
+//#include <I2C.h.bak>
 #include <math.h>
+//#include <old/i2c.h>
 
 #include "board.h"
 #include "debug.h"																// For measuring ISR time
@@ -27,11 +29,13 @@
 
 #define DEVELOPMENT_MODE			1
 
+#define CONFIG_FREQUENCY_HZ			1000U
+
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef enum { IDLE, READING } state_t;
+typedef enum { OFF, IDLE, READING } state_t;
 typedef enum { BLOCKING, NON_BLOCKING } mode_t;
 typedef enum { BUSY, DONE, ERROR } bus_status_t;
 
@@ -46,7 +50,13 @@ static const bus_status_t bus_status[] = { BUSY, DONE, ERROR };
  ******************************************************************************/
 
 /**
- * @brief Read data from the sensor
+ * @brief Called periodically to configure all registers (once each)
+ * @note Status should be checked with sensorConfigStatus()
+ */
+static void config (void);
+
+/**
+ * @brief Read (store) data from the sensor periodically
  */
 static void readData (void);
 
@@ -95,6 +105,9 @@ static bus_status_t transmitState (void);
  */
 static bus_status_t wait (void);
 
+/**
+ * @brief Check (store) bus status
+ */
 static void checkBus (void);
 
 /*******************************************************************************
@@ -103,7 +116,7 @@ static void checkBus (void);
 
 static raw_data_t accel_data, magn_data;
 static sensor_t data, data_prev;
-static bool status_bus;
+static bool status_bus, status_config;
 
 /*******************************************************************************
  *******************************************************************************
@@ -121,66 +134,16 @@ bool sensorInit (void)
 	{
 		init();
 		pisrRegister(readData, PISR_FREQUENCY_HZ / SENSOR_FREQUENCY_HZ); // Configure PISR for the sensor
-		pisrRegister(checkBus, PISR_FREQUENCY_HZ / 1000);
+		pisrRegister(config, PISR_FREQUENCY_HZ / CONFIG_FREQUENCY_HZ);
 		status = true;
 	}
 
 	return status;
 }
 
-bool sensorConfig (void)
+bool sensorConfigStatus (void)
 {
-	static bool status[7] = { false, false, false, false, false, false, false }, status_all = false;
-	uint8_t databyte;
-
-	if (!status_all && status_bus)
-	{
-		if(!status[0] && status_bus)
-			status[0] = (status_bus = readRegs(FXOS8700CQ_WHOAMI, &databyte, 1, BLOCKING)) &&
-						(databyte == FXOS8700CQ_WHOAMI_VAL); // Read and check the ID
-
-		if (!status[1] && status_bus)
-		{
-			databyte = 0x00; // Place into standby
-			status[1] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		if (status[2] && status_bus)
-		{
-			databyte = 0x1F; // No auto calibration, one-shot magn reset or measurement, 8x os and hybrid mode
-			status[2] = writeRegs(FXOS8700CQ_M_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		if (status[3] && status_bus)
-		{
-			databyte = 0x20; // Map magn registers to follow accel, retain min/max latching and enable magn reset each cycle
-			status[3] = writeRegs(FXOS8700CQ_M_CTRL_REG2, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		if (status[4] && status_bus)
-		{
-			databyte = 0x01; //No filter and accel range of +/-4g range with 0.488mg/LSB
-			status[4] = writeRegs(FXOS8700CQ_XYZ_DATA_CFG, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		if (status[5] && status_bus)
-		{
-			databyte = 0x0D; // 200Hz data rate, low noise, 16 bit reads, out of standby and enable sampling
-			status[5] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		if (status[6] && status_bus)
-		{
-			databyte = 0x00; // Disable FIFO
-			status[6] = writeRegs(FXOS8700CQ_F_SETUP, &databyte, 1, BLOCKING) == BUSY;
-		}
-
-		status_all = 0;
-		for (uint8_t i = 0; i < 7; i++)
-			status_all |= status[i];
-	}
-
-	return status_all;
+	return status_config;
 }
 
 sensor_status_t* sensorGetStatus ()
@@ -209,7 +172,6 @@ raw_data_t* sensorGetMagnRawData (void)
 
 sensor_t* sensorGetAngleData (void)
 {
-	// processData();
 	data_prev = data;
 
 	return &data;
@@ -221,18 +183,80 @@ sensor_t* sensorGetAngleData (void)
  *******************************************************************************
  ******************************************************************************/
 
+static void config (void)
+{
+#if DEBUG_SENSOR
+P_DEBUG_TP_SET
+#endif
+	static bool status[7] = { false, false, false, false, false, false, false };
+	static uint8_t name = FXOS8700CQ_WHOAMI_VAL - 1;
+	uint8_t databyte;
+
+	if (!status_config && (transmitState() == DONE))
+	{
+		if (!status[0])
+			status[0] = readRegs(FXOS8700CQ_WHOAMI, &name, 1, BLOCKING) == BUSY; // Read and check the ID
+
+		if (name == FXOS8700CQ_WHOAMI_VAL)
+		{
+			if (!status[1])
+			{
+				databyte = 0x00; // Place into standby
+				status[1] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else if (!status[2])
+			{
+				databyte = 0x1F; // No auto calibration, one-shot magn reset or measurement, 8x oversampling and hybrid mode
+				status[2] = writeRegs(FXOS8700CQ_M_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else if (!status[3])
+			{
+				databyte = 0x20; // Map magn registers to follow accel, retain min/max latching and enable magn reset each cycle
+				status[3] = writeRegs(FXOS8700CQ_M_CTRL_REG2, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else if (!status[4])
+			{
+				databyte = 0x01; //No filter and accel range of +/-4g range with 0.488mg/LSB
+//				status[4] = writeRegs(FXOS8700CQ_XYZ_DATA_CFG, &databyte, 1, BLOCKING) == BUSY;
+				status[4] = readRegs(FXOS8700CQ_M_CTRL_REG2, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else if (!status[5])
+			{
+				databyte = 0x00; // Disable FIFO
+				status[5] = writeRegs(FXOS8700CQ_F_SETUP, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else if (!status[6])
+			{
+				databyte = 0x0D; // 200Hz data rate, low noise, 16 bit reads, out of standby and enable sampling
+				status[6] = writeRegs(FXOS8700CQ_CTRL_REG1, &databyte, 1, BLOCKING) == BUSY;
+			}
+			else
+				status_config = true;
+		}
+	}
+#if DEBUG_SENSOR
+P_DEBUG_TP_CLR
+#endif
+}
+
 static void readData (void)
 {
 #if DEBUG_SENSOR
 P_DEBUG_TP_SET
 #endif
-	static state_t state = IDLE;
+	static state_t state = OFF;
 	static uint8_t buffer[FXOS8700CQ_READ_LEN];
 
 	/* Small FSM to read data from the sensor only when the bus is free */
 	switch (state)
 	{
+		case OFF:
+			if (status_config)
+				state = IDLE;
+			break;
 		case IDLE:																// Wait for the bus to be free to read data
+			for (uint8_t i = 0; i < FXOS8700CQ_READ_LEN; i++)
+				buffer[i] = 0;
 			if((transmitState() != BUSY) && (readRegs(FXOS8700CQ_STATUS, buffer, FXOS8700CQ_READ_LEN, NON_BLOCKING) == BUSY))
 				state = READING;
 			break;
@@ -241,7 +265,7 @@ P_DEBUG_TP_SET
 			if (transmitState() != BUSY)
 				state = IDLE;
 
-			if ((transmitState() == DONE) && (buffer[0] &= 0x02))				// Check if data is ready
+			if ((transmitState() == DONE) && (buffer[0] &= 0x08))				// Check if data is ready
 			{
 				accel_data.x = (int16_t)((buffer[1] << 8) | buffer[2]) >> 2;
 				accel_data.y = (int16_t)((buffer[3] << 8) | buffer[4]) >> 2;

@@ -23,13 +23,13 @@
  ******************************************************************************/
 
 #define TIMER_TICK_US       500
-#define TIMER_MS2TICKS(ms)	(1000*(ms)/TIMER_TICK_US)
+#define TIMER_MS2TICKS(ms)	((ms)*1000/TIMER_TICK_US)
 
 /*******************************************************************************
  * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
  ******************************************************************************/
 
-typedef int64_t ticks_t;
+typedef int32_t ticks_t;
 
 /*******************************************************************************
  * FUNCTION PROTOTYPES WITH GLOBAL SCOPE
@@ -64,7 +64,7 @@ bool timerExpired(ticks_t timeout);
  */
 void timerDelay(ticks_t ticks);
 
-ticks_t timerCounter(void);
+uint32_t timerCounter(void);
 
 /*******************************************************************************
  ******************************************************************************/

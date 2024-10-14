@@ -71,14 +71,18 @@ bool pisrRegister (pisr_callback_t fun, unsigned int period)
 
 __ISR__ SysTick_Handler(void)
 {
-//	DEBUG_TP_SET;
+#if DEBUG_PISR
+P_DEBUG_TP_SET
+#endif
 	for(int i = 0; i < count ; i++)
 		if(--((funArr[i]).counter) == 0)
 		{
 			(funArr[i]).funadrrs();
 			(funArr[i]).counter = (funArr[i]).time;
 		}
-//	DEBUG_TP_CLR;
+#if DEBUG_PISR
+P_DEBUG_TP_CLR
+#endif
 }
 
 /******************************************************************************/

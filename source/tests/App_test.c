@@ -86,10 +86,10 @@ void App_Init (void)
 	// state = fsmInit();
 }
 
-sensor_axis_t axis[ALL] = { ROLL, PITCH, YAW };
-angle_t angles[ALL] = { 0, 0, 0 };
+sensor_axis_t axis[AXIS_CANT] = { ROLL, PITCH, YAW };
+angle_t angles[AXIS_CANT] = { 0, 0, 0 };
 station_id_t stations[STATIONS_CANT] = { STATION_1, STATION_2, STATION_3, STATION_4, STATION_5 };
-static bool update[ALL] = { false, false, false };
+static bool update[AXIS_CANT] = { false, false, false };
 static uint8_t index1 = 0, index2 = 0;
 protocol_t angle_data, *p;
 uchar_t sid, station[5];
@@ -199,7 +199,7 @@ void App_Run (void)
 void update2 (uint8_t *_index, bool __index)
 {
 	timerCounter();
-	for (uint8_t i = 0; i < ALL; i++)
+	for (uint8_t i = 0; i < AXIS_CANT; i++)
 	{
 		if (update[*_index] == __index)
 		{
@@ -224,11 +224,11 @@ void update2 (uint8_t *_index, bool __index)
 			*station = '\n';
 			serialWriteData(station, 1);
 
-			i = ALL;
+			i = AXIS_CANT;
 		}
 
 		(*_index)++;
-		(*_index) %= ALL;
+		(*_index) %= AXIS_CANT;
 	}
 	timerCounter();
 }

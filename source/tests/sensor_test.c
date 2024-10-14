@@ -42,7 +42,7 @@ int main (void)
 	__FOREVER__
 	{
 
-//		if (sensorGetStatus(ALL))
+//		if (sensorGetStatus(AXIS_CANT))
 		if (sensorGetStatus(ROLL))
 		{
 			sensor_t* data = sensorGetAngleData();

@@ -22,8 +22,10 @@
  ******************************************************************************/
 
 #define DEVELOPMENT_MODE			1
-#define DEBUG_TP					1											// Debugging test points to measure ISR time
 
+/*******************************************************************************
+ * ENUMERATIONS AND STRUCTURES AND TYPEDEFS
+ ******************************************************************************/
 
 typedef unsigned char uchar_t;
 
@@ -52,7 +54,16 @@ bool serialWriteData (uchar_t* data, uint8_t len);
  */
 uchar_t* serialReadData (uint8_t* len);
 
+/**
+ * @brief Check if there is data to be written
+ * @return true if all data was sent
+ */
 bool serialWriteStatus (void);
+
+/**
+ * @brief Check if there is data to be read
+ * @return true if a message was received
+ */
 bool serialReadStatus (void);
 
 /*******************************************************************************

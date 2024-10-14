@@ -26,36 +26,45 @@
 #include "timer.h"
 
 /*******************************************************************************
+ * CONSTANT AND MACRO DEFINITIONS USING #DEFINE
+ ******************************************************************************/
+
+enum {
+	TIM_STATION		= TIMER_MS2TICKS(STATION_PERIOD_MS),
+	TIM_SENSOR		= TIMER_MS2TICKS(SENSOR_PERIOD_MS),
+	TIM_UPDATE		= TIMER_MS2TICKS(50),										// Send data every 50ms if there is any change
+	TIM_NO_UPDATE	= TIMER_MS2TICKS(1000)										// Send data every 1s if there is no change
+};
+
+/*******************************************************************************
  * STATIC VARIABLES AND CONST VARIABLES WITH FILE LEVEL SCOPE
  ******************************************************************************/
 
+static bool init_sensor, update[AXIS_CANT] = { false, false, false };
+static uint8_t index_update, index_no_update;
+
+static const uchar_t id2Chars[] = { 'R', 'C', 'O' };							// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
+static angle_t angles[AXIS_CANT] = { 0, 0, 0 };
 static sensor_t data;
-sensor_axis_t axis[ALL] = { ROLL, PITCH, YAW };
-angle_t angles[ALL] = { 0, 0, 0 };
-station_id_t stations[STATIONS_CANT] = { STATION_1, STATION_2, STATION_3, STATION_4, STATION_5 };
-static bool update[ALL] = { false, false, false };
-static uint8_t index1 = 0, index2 = 0;
-protocol_t angle_data, *p;
-uchar_t sid, station[5];
-uchar_t msg[PROTOCOL_DIGS] = "hola";
-uint8_t len = 0;
-station_t s;
-static bool init_sensor;
-sensor_status_t status;
+static sensor_status_t status;
 
-const uchar_t id2Chars[] = { 'R', 'C', 'O' };									// Roll (Rolido), Pitch (Cabeceo), Yaw (Orientacion)
+static ticks_t timeout_station, timeout_sensor, timeout_update, timeout_no_update;
 
-static ticks_t timeout_1ms, timeout_10ms, timeout_50ms, timeout_1s, timeout_2s;
+/*******************************************************************************
+ * FUNCTION PROTOTYPES FOR PRIVATE FUNCTIONS WITH FILE LEVEL SCOPE
+ ******************************************************************************/
 
-typedef enum {
-	MS_1 = TIMER_MS2TICKS(1),
-	MS_10 = TIMER_MS2TICKS(10),
-	MS_50 = TIMER_MS2TICKS(50),
-	S_1 = TIMER_MS2TICKS(1000),
-	S_2 = TIMER_MS2TICKS(2000)
-} ms_t;
+/**
+ * @brief Update and send outgoing data
+ * @param _index Poins (in update[]) to the axis to be checked for update
+ * @param _update Update condition (value in update[])
+ */
+void updateOutgoing (uint8_t *_index, bool _update);
 
-void update2 (uint8_t *_index, bool __index);
+/**
+ * @brief Receive and update incoming data
+ */
+void updateIncoming (void);
 
 /*******************************************************************************
  *******************************************************************************
@@ -74,11 +83,10 @@ void App_Init (void)
 //	stationInit();
 
 	timerInit();
-	timeout_1ms		= timerStart(TIMER_MS2TICKS(1));
-	timeout_10ms	= timerStart(TIMER_MS2TICKS(10));
-	timeout_50ms	= timerStart(TIMER_MS2TICKS(5));
-	timeout_1s		= timerStart(TIMER_MS2TICKS(10));
-	timeout_2s		= timerStart(TIMER_MS2TICKS(2000));
+	timeout_station		= timerStart(TIM_STATION);
+	timeout_sensor		= timerStart(TIM_SENSOR);
+	timeout_update		= timerStart(TIM_UPDATE);
+	timeout_no_update	= timerStart(TIM_NO_UPDATE);
 }
 
 /**
@@ -87,47 +95,45 @@ void App_Init (void)
  */
 void App_Run (void)
 {
-	if (!init_sensor) { init_sensor = sensorConfig(); }							// Needs to be done with interrupts enabled
+	if (!init_sensor) { init_sensor = sensorConfigStatus(); }					// Needs to be done with interrupts enabled
 	else
 	{
-		if(timerExpired(timeout_1s))
+		if(timerExpired(timeout_station))										// Receive other stations data
 		{
-			update2(&index1, 0);
-			timeout_1s = timerStart(TIMER_MS2TICKS(1000));
-		}
-
-		if (timerExpired(timeout_50ms))
-		{
-			update2(&index2, 1);
-			timeout_50ms = timerStart(TIMER_MS2TICKS(50));
-		}
-
-		if(timerExpired(timeout_1ms))												// Update own data (without sending) and receive other stations data
-		{
-			status = *sensorGetStatus();
-			update[ROLL]	= status.roll;
-			update[PITCH]	= status.pitch;
-			update[YAW]		= status.yaw;
-
-			if (status.roll || status.pitch || status.yaw)
-				data = *sensorGetAngleData();
-
-			angles[ROLL]	= data.roll;
-			angles[PITCH]	= data.pitch;
-			angles[YAW]		= data.yaw;
-
-			s = (station_t){ GN, msg, PROTOCOL_DIGS };
-			stationReceive(&s);
-			if (s.len)
+			if (timerExpired(timeout_sensor))									// Update own sensor data (without sending)
 			{
-				*station = NUM2ASCII(s.id);
-				serialWriteData(station, 1);
-				serialWriteData(s.data, s.len);
-				// len = protocolPack(protocolUnpack(s.data, s.len), msg);
-				// serialWriteData(msg, len);
+				if (timerExpired(timeout_update))								// Send own station data
+				{
+					if(timerExpired(timeout_no_update))
+					{
+						updateOutgoing(&index_update, false);
+						timeout_no_update = timerStart(TIM_NO_UPDATE);
+					}
+					else
+						updateOutgoing(&index_no_update, true);
+
+					timeout_update = timerStart(TIM_UPDATE);
+				}
+
+				status = *sensorGetStatus();
+				update[ROLL]	= status.roll;
+				update[PITCH]	= status.pitch;
+				update[YAW]		= status.yaw;
+
+				if (status.roll || status.pitch || status.yaw)
+					data = *sensorGetAngleData();
+
+//				update[PITCH]	= update[YAW] = false;
+				angles[ROLL]	= data.roll;
+				angles[PITCH]	= data.pitch;
+				angles[YAW]		= data.yaw;
+
+				timeout_sensor = timerStart(TIM_SENSOR);
 			}
 
-			timeout_1ms = timerStart(TIMER_MS2TICKS(1));
+			// updateIncoming();
+
+			timeout_station = timerStart(TIM_STATION);
 		}
 	}
 }
@@ -138,27 +144,53 @@ void App_Run (void)
  *******************************************************************************
  ******************************************************************************/
 
-void update2 (uint8_t *_index, bool __index)									// Send data to the stations and serial port
+void updateOutgoing (uint8_t *_index, bool _update)								// Send data to the stations and serial port
 {
-	for (uint8_t i = 0; i < ALL; i++)
+	uchar_t msg[PROTOCOL_DIGS];
+	uint8_t len, sid;
+	station_t s;
+	protocol_t angle_data;
+
+	for (uint8_t i = 0; i < AXIS_CANT; i++)
 	{
-		if (update[*_index] == __index)
+		if (update[*_index] == _update)
 		{
-			angle_data = (protocol_t){ id2Chars[axis[*_index]], angles[*_index] };
+			angle_data = (protocol_t){ id2Chars[*_index], angles[*_index] };
 			len = protocolPack(&angle_data, msg);
-			s = (station_t){ GN - 1, msg, len };
-			stationSend(&s);
+//			s = (station_t){ GN - 1, msg, len };
+//			stationSend(&s);
 
-			*station = NUM2ASCII(GN);
-			serialWriteData(station, 1);
+			sid = NUM2ASCII(GN - 1);
+			serialWriteData(&sid, 1);
 			serialWriteData(msg, len);
+			sid = '\n';
+			serialWriteData(&sid, 1);
 
-			i = ALL;
+			i = AXIS_CANT;
 		}
 
 		(*_index)++;
-		(*_index) %= ALL;
+		(*_index) %= AXIS_CANT;
 	}
+}
+
+void updateIncoming (void)														// Receive data from the serial port
+{
+//	uchar_t msg[PROTOCOL_DIGS];
+//	uint8_t len, sid;
+//	station_t s;
+//	protocol_t angle_data;
+//
+//	s = (station_t){ GN - 1, msg, PROTOCOL_DIGS };
+//	stationReceive(&s);
+//	if (s.len)
+//	{
+//		sid = NUM2ASCII(s.id);
+//		serialWriteData(&sid, 1);
+//		serialWriteData(s.data, s.len);
+//		// len = protocolPack(protocolUnpack(s.data, s.len), msg);
+//		// serialWriteData(msg, len);
+//	}
 }
 
 /******************************************************************************/
